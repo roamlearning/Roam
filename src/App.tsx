@@ -1,9 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, X, Globe, Check, Clock, Users, Calendar, Sparkles, Lock, MessageCircle, BookOpen, Headphones, PenTool, ArrowRight, RotateCcw, MapPin, UsersRound, PartyPopper, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import './App.css';
 
 // Navigation Component - Logo banner style
@@ -113,59 +112,56 @@ function Navigation() {
   );
 }
 
-// Floating Translate Button with More Languages
-function FloatingTranslateButton() {
-  const [isOpen, setIsOpen] = useState(false);
-  const languages = [
-    { code: 'es', name: 'Español' },
-    { code: 'fr', name: 'Français' },
-    { code: 'de', name: 'Deutsch' },
-    { code: 'zh', name: '中文' },
-    { code: 'ar', name: 'العربية' },
-    { code: 'hi', name: 'हिन्दी' },
-    { code: 'pt', name: 'Português' },
-    { code: 'ru', name: 'Русский' },
-    { code: 'tr', name: 'Türkçe' },
-    { code: 'ja', name: '日本語' },
-    { code: 'ko', name: '한국어' },
-    { code: 'it', name: 'Italiano' },
-    { code: 'pl', name: 'Polski' },
-    { code: 'uk', name: 'Українська' },
-    { code: 'vi', name: 'Tiếng Việt' },
-    { code: 'th', name: 'ไทย' },
-  ];
+// Google Translate Widget
+function GoogleTranslateWidget() {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    // Add Google Translate script
+    const addScript = () => {
+      const script = document.createElement('script');
+      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      document.body.appendChild(script);
+    };
+
+    // Define the callback function
+    (window as any).googleTranslateElementInit = () => {
+      new (window as any).google.translate.TranslateElement(
+        {
+          pageLanguage: 'en',
+          includedLanguages: 'es,fr,de,zh-CN,ar,hi,pt,ru,tr,ja,ko,it,pl,uk,vi,th',
+          layout: (window as any).google.translate.TranslateElement.InlineLayout.SIMPLE,
+        },
+        'google_translate_element'
+      );
+    };
+
+    addScript();
+  }, []);
+
+  if (!isVisible) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[400px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-center text-[#5a3d2a]">Translate to your language</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            {languages.map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => {
-                  alert(`Translating to ${lang.name}... (Google Translate integration would go here)`);
-                  setIsOpen(false);
-                }}
-                className="p-3 text-sm rounded-lg bg-[#faf6f3] hover:bg-[#d4867a] hover:text-white transition-colors text-[#5a3d2a]"
-              >
-                {lang.name}
-              </button>
-            ))}
+      <div className="relative">
+        {/* Close button */}
+        <button
+          onClick={() => setIsVisible(false)}
+          className="absolute -top-2 -right-2 bg-[#5a3d2a] text-white rounded-full p-1 hover:bg-[#3d2a1d] transition-colors z-10"
+        >
+          <X className="h-3 w-3" />
+        </button>
+        
+        {/* Google Translate Element */}
+        <div className="bg-white rounded-xl shadow-lg p-3 border border-[#d4867a]/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Globe className="h-4 w-4 text-[#d4867a]" />
+            <span className="text-xs font-medium text-[#5a3d2a]">Translate</span>
           </div>
-        </DialogContent>
-      </Dialog>
-      
-      <button
-        onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 bg-[#d4867a] hover:bg-[#c2756a] text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group"
-      >
-        <Globe className="h-5 w-5 group-hover:rotate-12 transition-transform" />
-        <span className="text-sm font-medium hidden sm:inline">Translate</span>
-      </button>
+          <div id="google_translate_element" className="[&>div]:!border-0 [&_.goog-te-gadget]:!text-[#5a3d2a] [&_.goog-te-gadget-simple]:!border-[#d4867a] [&_.goog-te-gadget-simple]:!rounded-lg [&_.goog-te-gadget-simple]:!bg-[#faf6f3]" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -1930,7 +1926,7 @@ function App() {
           </Routes>
         </main>
         <Footer />
-        <FloatingTranslateButton />
+        <GoogleTranslateWidget />
       </div>
     </Router>
   );
