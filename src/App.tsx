@@ -25,11 +25,11 @@ function Navigation() {
 
   return (
     <nav className="sticky top-0 z-50 bg-[#fcc4be]">
-      {/* Logo Banner Row */}
+      {/* Logo Banner Row - Centered */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between py-3">
-          {/* Logo - Wide banner style */}
-          <Link to="/" className="flex items-center flex-1">
+        <div className="flex items-center justify-center py-3 relative">
+          {/* Logo - Centered */}
+          <Link to="/" className="flex items-center justify-center">
             <img 
               src="/logo-banner.png" 
               alt="Roam Learning" 
@@ -37,8 +37,8 @@ function Navigation() {
             />
           </Link>
 
-          {/* CTA Button - Desktop */}
-          <div className="hidden md:block ml-4">
+          {/* CTA Button - Desktop - Absolute right */}
+          <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2">
             <Link to="/classes">
               <Button className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-xl px-6 py-6 text-lg font-medium">
                 Book a<br/>class
@@ -46,10 +46,10 @@ function Navigation() {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - Absolute right */}
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 ml-2"
+            className="md:hidden absolute right-0 top-1/2 -translate-y-1/2 p-2"
           >
             {isOpen ? (
               <X className="h-6 w-6 text-[#5a3d2a]" />
@@ -112,9 +112,9 @@ function Navigation() {
   );
 }
 
-// Google Translate Widget
+// Cute Google Translate Button
 function GoogleTranslateWidget() {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     // Add Google Translate script
@@ -140,28 +140,40 @@ function GoogleTranslateWidget() {
     addScript();
   }, []);
 
-  if (!isVisible) return null;
-
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <div className="relative">
-        {/* Close button */}
-        <button
-          onClick={() => setIsVisible(false)}
-          className="absolute -top-2 -right-2 bg-[#5a3d2a] text-white rounded-full p-1 hover:bg-[#3d2a1d] transition-colors z-10"
-        >
-          <X className="h-3 w-3" />
-        </button>
-        
-        {/* Google Translate Element */}
-        <div className="bg-white rounded-xl shadow-lg p-3 border border-[#d4867a]/20">
-          <div className="flex items-center gap-2 mb-2">
-            <Globe className="h-4 w-4 text-[#d4867a]" />
-            <span className="text-xs font-medium text-[#5a3d2a]">Translate</span>
+      {/* Language Selector Popup */}
+      {isOpen && (
+        <div className="absolute bottom-16 right-0 mb-2">
+          <div className="relative">
+            {/* Close button */}
+            <button
+              onClick={() => setIsOpen(false)}
+              className="absolute -top-2 -right-2 bg-[#5a3d2a] text-white rounded-full p-1 hover:bg-[#3d2a1d] transition-colors z-10"
+            >
+              <X className="h-3 w-3" />
+            </button>
+            
+            {/* Google Translate Element */}
+            <div className="bg-white rounded-xl shadow-lg p-3 border border-[#d4867a]/20 min-w-[150px]">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="h-4 w-4 text-[#d4867a]" />
+                <span className="text-xs font-medium text-[#5a3d2a]">Translate</span>
+              </div>
+              <div id="google_translate_element" className="[&>div]:!border-0 [&_.goog-te-gadget]:!text-[#5a3d2a] [&_.goog-te-gadget-simple]:!border-[#d4867a] [&_.goog-te-gadget-simple]:!rounded-lg [&_.goog-te-gadget-simple]:!bg-[#faf6f3]" />
+            </div>
           </div>
-          <div id="google_translate_element" className="[&>div]:!border-0 [&_.goog-te-gadget]:!text-[#5a3d2a] [&_.goog-te-gadget-simple]:!border-[#d4867a] [&_.goog-te-gadget-simple]:!rounded-lg [&_.goog-te-gadget-simple]:!bg-[#faf6f3]" />
         </div>
-      </div>
+      )}
+      
+      {/* Cute Floating Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 bg-[#d4867a] hover:bg-[#c2756a] text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group"
+      >
+        <Globe className="h-5 w-5 group-hover:rotate-12 transition-transform" />
+        <span className="text-sm font-medium hidden sm:inline">Translate</span>
+      </button>
     </div>
   );
 }
