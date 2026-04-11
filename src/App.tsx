@@ -142,29 +142,31 @@ function GoogleTranslateWidget() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {/* Language Selector Popup */}
-      {isOpen && (
-        <div className="absolute bottom-16 right-0 mb-2">
-          <div className="relative">
-            {/* Close button */}
-            <button
-              onClick={() => setIsOpen(false)}
-              className="absolute -top-2 -right-2 bg-[#5a3d2a] text-white rounded-full p-1 hover:bg-[#3d2a1d] transition-colors z-10"
-            >
-              <X className="h-3 w-3" />
-            </button>
-            
-            {/* Google Translate Element */}
-            <div className="bg-white rounded-xl shadow-lg p-3 border border-[#d4867a]/20 min-w-[150px]">
-              <div className="flex items-center gap-2 mb-2">
-                <Globe className="h-4 w-4 text-[#d4867a]" />
-                <span className="text-xs font-medium text-[#5a3d2a]">Translate</span>
-              </div>
-              <div id="google_translate_element" className="[&>div]:!border-0 [&_.goog-te-gadget]:!text-[#5a3d2a] [&_.goog-te-gadget-simple]:!border-[#d4867a] [&_.goog-te-gadget-simple]:!rounded-lg [&_.goog-te-gadget-simple]:!bg-[#faf6f3]" />
+      {/* Language Selector Popup - Always rendered but hidden when closed */}
+      <div 
+        className={`absolute bottom-16 right-0 mb-2 transition-all duration-300 ${
+          isOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible translate-y-2 pointer-events-none'
+        }`}
+      >
+        <div className="relative">
+          {/* Close button */}
+          <button
+            onClick={() => setIsOpen(false)}
+            className="absolute -top-2 -right-2 bg-[#5a3d2a] text-white rounded-full p-1 hover:bg-[#3d2a1d] transition-colors z-10"
+          >
+            <X className="h-3 w-3" />
+          </button>
+          
+          {/* Google Translate Element - Always rendered */}
+          <div className="bg-white rounded-xl shadow-lg p-3 border border-[#d4867a]/20 min-w-[150px]">
+            <div className="flex items-center gap-2 mb-2">
+              <Globe className="h-4 w-4 text-[#d4867a]" />
+              <span className="text-xs font-medium text-[#5a3d2a]">Translate</span>
             </div>
+            <div id="google_translate_element" className="[&>div]:!border-0 [&_.goog-te-gadget]:!text-[#5a3d2a] [&_.goog-te-gadget-simple]:!border-[#d4867a] [&_.goog-te-gadget-simple]:!rounded-lg [&_.goog-te-gadget-simple]:!bg-[#faf6f3]" />
           </div>
         </div>
-      )}
+      </div>
       
       {/* Cute Floating Button */}
       <button
