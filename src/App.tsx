@@ -741,6 +741,19 @@ function ClassTypeIcon({ type }: { type: string }) {
 // Classes Page with New Pricing Display
 function ClassesPage() {
   const [selectedClassType, setSelectedClassType] = useState<string | null>(null);
+  const detailsRef = React.useRef<HTMLDivElement>(null);
+
+  const handleClassTypeClick = (typeId: string) => {
+    const newType = selectedClassType === typeId ? null : typeId;
+    setSelectedClassType(newType);
+    
+    // Scroll to details after a short delay to allow render
+    if (newType) {
+      setTimeout(() => {
+        detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  };
 
   const classTypes = [
     { id: 'inperson-group', label: 'In-Person Group', price: '$18' },
@@ -786,7 +799,7 @@ function ClassesPage() {
           {classTypes.map((type) => (
             <button
               key={type.id}
-              onClick={() => setSelectedClassType(selectedClassType === type.id ? null : type.id)}
+              onClick={() => handleClassTypeClick(type.id)}
               className={`p-4 rounded-2xl text-left transition-all ${
                 selectedClassType === type.id 
                   ? 'bg-[#d4867a] text-white' 
@@ -806,7 +819,7 @@ function ClassesPage() {
 
         {/* Selected Class Type Details */}
         {selectedClassType && (
-          <div className="bg-white rounded-3xl p-8 mb-12">
+          <div ref={detailsRef} className="bg-white rounded-3xl p-8 mb-12 scroll-mt-24">
             {(() => {
               const data = classTypeData[selectedClassType];
               return (
