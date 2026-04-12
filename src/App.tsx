@@ -452,7 +452,7 @@ const classTypeData: Record<string, {
       'Industry-specific vocabulary and terminology',
       'Professional writing and documentation support',
     ],
-    stripeSingle: 'https://buy.stripe.com/28E4gz8efdszeG23CNc3m00',
+    stripeSingle: 'https://buy.stripe.com/fZu7sL7abcov2Xk2yJc3m05',
   },
   'interview-prep': {
     title: 'Interview Prep',
@@ -1545,7 +1545,7 @@ function AboutPage() {
   );
 }
 
-// Events Data
+// Events Data with Stripe Links
 const eventsData = [
   {
     id: 1,
@@ -1572,7 +1572,8 @@ const eventsData = [
     color: 'bg-emerald-700',
     tags: ['Free', 'A1–A2'],
     costDisplay: '$15',
-    costBreakdown: '($15 Roam fee + $0 venue fee)'
+    costBreakdown: '($15 Roam fee + $0 venue fee)',
+    stripeLink: 'https://buy.stripe.com/dRm00j667agndBY8X7c3m06'
   },
   {
     id: 2,
@@ -1599,21 +1600,22 @@ const eventsData = [
     color: 'bg-blue-700',
     tags: ['Free', 'B1–B2'],
     costDisplay: '$19 + optional café and gift shop',
-    costBreakdown: '($19 Roam fee + $0 venue fee + optional purchases)'
+    costBreakdown: '($19 Roam fee + $0 venue fee + optional purchases)',
+    stripeLink: 'https://buy.stripe.com/00w7sLamnbkrfK6flvc3m07'
   },
   {
     id: 3,
     date: 'WED MAY 7',
     time: '11:00 AM',
     category: '$6 WITH OHIO ID',
-    level: 'C1',
-    levelLabel: 'Advanced & Business',
+    level: 'All Levels',
+    levelLabel: 'All Levels',
     title: 'Rock & Roll Hall of Fame',
     venue: 'Rock & Roll Hall of Fame',
     address: '1100 Rock and Roll Blvd, Downtown',
     venueUrl: 'https://www.rockhall.com/',
     grammarFocus: {
-      C1: 'Hedging — It could be argued that..., This tends to reflect...'
+      All: 'Worksheets specific to each level'
     },
     vocabulary: 'Music and culture, persuasive language, nuanced opinions',
     duration: 2.5,
@@ -1623,9 +1625,10 @@ const eventsData = [
     additionalCosts: 'Gift shop, cafe available',
     menuUrl: null,
     color: 'bg-indigo-700',
-    tags: ['$6 Ohio ID', 'C1'],
+    tags: ['$6 Ohio ID', 'All Levels'],
     costDisplay: '$30 with Ohio ID / $63 without Ohio ID',
-    costBreakdown: '($24 Roam fee + $6 entry with OH ID / $39.50 without OH ID)'
+    costBreakdown: '($24 Roam fee + $6 entry with OH ID / $39.50 without OH ID)',
+    stripeLink: 'https://buy.stripe.com/fZu9ATamnbkrbtQ7T3c3m08'
   },
   {
     id: 4,
@@ -1652,21 +1655,21 @@ const eventsData = [
     color: 'bg-rose-400',
     tags: ['Cafe', 'A1–A2'],
     costDisplay: '$15 + coffee/snack purchase',
-    costBreakdown: '($15 Roam fee + $0 venue fee + $5–$12 purchase)'
+    costBreakdown: '($15 Roam fee + $0 venue fee + $5–$12 purchase)',
+    stripeLink: 'https://buy.stripe.com/aFa5kDcuv6072Xk1uFc3m09'
   },
   {
     id: 5,
     date: 'TUE MAY 13',
     time: '10:00 AM',
     category: 'FREE ENTRY',
-    level: 'B1–B2',
-    levelLabel: 'Intermediate',
+    level: 'B2',
+    levelLabel: 'Upper Intermediate',
     title: 'West Side Market',
     venue: 'West Side Market',
     address: '1979 W 25th St, Ohio City',
     venueUrl: 'https://westsidemarket.org/',
     grammarFocus: {
-      B1: 'Going to / will for plans',
       B2: 'Conditionals — If I had known about this place...'
     },
     vocabulary: 'Produce, quantities, vendor interactions, comparing items',
@@ -1677,9 +1680,10 @@ const eventsData = [
     additionalCosts: 'Market purchases: your choice',
     menuUrl: null,
     color: 'bg-teal-600',
-    tags: ['Free entry', 'B1–B2'],
+    tags: ['Free entry', 'B2'],
     costDisplay: '$15 + optional market purchases',
-    costBreakdown: '($15 Roam fee + $0 venue fee + optional purchases)'
+    costBreakdown: '($15 Roam fee + $0 venue fee + optional purchases)',
+    stripeLink: 'https://buy.stripe.com/00w00jcuv88fdBY0qBc3m0a'
   },
   {
     id: 6,
@@ -1706,7 +1710,8 @@ const eventsData = [
     color: 'bg-amber-600',
     tags: ['Dining', 'B1–B2'],
     costDisplay: '$19 + lunch purchase',
-    costBreakdown: '($19 Roam fee + $0 venue fee + $18–$30 lunch)'
+    costBreakdown: '($19 Roam fee + $0 venue fee + $18–$30 lunch)',
+    stripeLink: 'https://buy.stripe.com/eVqdR9gKL3RZapMb5fc3m0b'
   },
   {
     id: 7,
@@ -1732,7 +1737,8 @@ const eventsData = [
     color: 'bg-violet-700',
     tags: ['Dining', 'C1'],
     costDisplay: '$19 + lunch purchase',
-    costBreakdown: '($19 Roam fee + $0 venue fee + $20–$40 lunch)'
+    costBreakdown: '($19 Roam fee + $0 venue fee + $20–$40 lunch)',
+    stripeLink: 'https://buy.stripe.com/dRm28r1PR3RZ8hE4GRc3m0c'
   }
 ];
 
@@ -1924,11 +1930,512 @@ function EventsPage() {
           <p className="text-[#8b6b5c] mb-6">
             RSVP through the booking form. Spots are capped to keep the group small and the conversation natural.
           </p>
-          <Link to="/classes">
+          <Link to="/event-booking">
             <Button className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full px-8 py-6 text-lg">
-              RSVP →
+              Book an Event →
             </Button>
           </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Fee Warning Dialog Component
+function FeeWarningDialog({ isOpen, onClose, onAgree, eventTitle }: { isOpen: boolean; onClose: () => void; onAgree: () => void; eventTitle: string }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-3xl p-8 max-w-lg w-full">
+        <div className="text-center">
+          <div className="text-5xl mb-4">💰</div>
+          <h2 className="text-2xl font-serif text-[#5a3d2a] mb-4">Please Read Before Booking</h2>
+          <p className="text-[#8b6b5c] mb-4">
+            <strong>{eventTitle}</strong> has the following fee structure:
+          </p>
+          <div className="bg-[#f5ebe5] rounded-xl p-4 mb-6 text-left">
+            <ul className="space-y-2 text-[#5a3d2a]">
+              <li>• <strong>Roam Session Fee:</strong> Paid to your teacher</li>
+              <li>• <strong>Venue Fee:</strong> May apply (check event details)</li>
+              <li>• <strong>On-site Purchases:</strong> Coffee, lunch, tickets, etc.</li>
+            </ul>
+          </div>
+          <p className="text-[#8b6b5c] mb-6 text-sm">
+            This allows us to be transparent about our fees while still compensating the teacher. 
+            The teacher will be available to assist with completing transactions upon request.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-3 rounded-full border border-[#d4867a] text-[#d4867a] hover:bg-[#f5ebe5] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onAgree}
+              className="px-6 py-3 rounded-full bg-[#d4867a] text-white hover:bg-[#c2756a] transition-colors"
+            >
+              I Understand, Continue to Book
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Event Booking Page with Calendar
+function EventBookingPage() {
+  const [filter, setFilter] = useState<string>('all');
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<typeof eventsData[0] | null>(null);
+
+  const filters = [
+    { id: 'all', label: 'All events' },
+    { id: 'A1-A2', label: 'Beginner (A1–A2)' },
+    { id: 'B1-B2', label: 'Intermediate (B1–B2)' },
+    { id: 'C1', label: 'Advanced (C1)' },
+    { id: 'All', label: 'All Levels' },
+  ];
+
+  const filteredEvents = eventsData.filter(event => {
+    if (filter === 'all') return true;
+    if (filter === 'A1-A2') return event.level === 'A1–A2';
+    if (filter === 'B1-B2') return event.level === 'B1–B2' || event.level === 'B2';
+    if (filter === 'C1') return event.level === 'C1';
+    if (filter === 'All') return event.level === 'All Levels';
+    return true;
+  });
+
+  const handleBookClick = (event: typeof eventsData[0]) => {
+    setSelectedEvent(event);
+    setWarningOpen(true);
+  };
+
+  const handleAgree = () => {
+    setWarningOpen(false);
+    if (selectedEvent?.stripeLink) {
+      window.open(selectedEvent.stripeLink, '_blank');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#faf6f3] py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <span className="inline-block bg-white rounded-full px-4 py-2 text-sm text-[#d4867a] mb-4 border border-[#d4867a]/20">
+            EVENT BOOKING
+          </span>
+          <h1 className="text-4xl sm:text-5xl font-serif text-[#5a3d2a] mb-4">Book an Event</h1>
+          <p className="text-[#8b6b5c] max-w-2xl mx-auto">
+            Select an event to view details and book your spot. Spots are limited to keep groups small!
+          </p>
+        </div>
+
+        {/* Calendar View */}
+        <div className="bg-white rounded-3xl p-6 mb-8">
+          <h2 className="text-xl font-medium text-[#5a3d2a] mb-4">May 2025 Calendar</h2>
+          <div className="grid grid-cols-7 gap-2 text-center mb-2">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} className="text-sm font-medium text-[#8b6b5c] py-2">{day}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {/* Empty cells for days before May 1 (Thursday) */}
+            {[...Array(4)].map((_, i) => (
+              <div key={`empty-${i}`} className="aspect-square" />
+            ))}
+            {/* Days */}
+            {[...Array(31)].map((_, i) => {
+              const day = i + 1;
+              const event = eventsData.find(e => {
+                const dateMatch = e.date.match(/(\d+)$/);
+                return dateMatch && parseInt(dateMatch[1]) === day;
+              });
+              
+              return (
+                <div 
+                  key={day} 
+                  className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm ${
+                    event ? 'bg-[#d4867a]/20 cursor-pointer hover:bg-[#d4867a]/30' : 'bg-[#faf6f3]'
+                  }`}
+                >
+                  <span className="font-medium">{day}</span>
+                  {event && (
+                    <span className="text-xs text-[#d4867a] mt-1">●</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Filter buttons */}
+        <div className="flex flex-wrap gap-3 mb-8">
+          {filters.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                filter === f.id
+                  ? 'bg-[#d4867a] text-white'
+                  : 'bg-white text-[#5a3d2a] hover:bg-[#f5ebe5] border border-gray-200'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Events list */}
+        <div className="space-y-6">
+          {filteredEvents.map((event) => (
+            <div key={event.id} className="bg-white rounded-3xl overflow-hidden">
+              {/* Event header */}
+              <div className={`${event.color} text-white p-6 relative`}>
+                {/* Price badge in top right */}
+                <div className="absolute top-4 right-4 bg-white/90 text-[#5a3d2a] px-3 py-1.5 rounded-full text-sm font-bold">
+                  ${event.roamFee}
+                </div>
+                <div className="text-sm opacity-90 mb-2 pr-16">
+                  {event.date} · {event.time} · {event.category}
+                </div>
+                <h2 className="text-2xl font-bold mb-4">
+                  {event.levelLabel} ({event.level}) — {event.title}
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {event.entryFeeOhio === 0 && event.entryFeeNonOhio === 0 && (
+                    <span className="bg-white/30 px-3 py-1 rounded-full text-sm">
+                      {event.category === 'DINING' ? 'Free Entry' : 'Free Venue'}
+                    </span>
+                  )}
+                  <span className="bg-white/30 px-3 py-1 rounded-full text-sm">
+                    {event.level}
+                  </span>
+                </div>
+              </div>
+
+              {/* Event details */}
+              <div className="p-6 space-y-6">
+                {/* Location */}
+                <div>
+                  <div className="flex items-center gap-2 text-[#d4867a] mb-2">
+                    <MapPin className="h-5 w-5" />
+                    <span className="text-sm font-medium uppercase tracking-wide">Location</span>
+                  </div>
+                  <a 
+                    href={event.venueUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[#5a3d2a] font-medium hover:text-[#d4867a] transition-colors"
+                  >
+                    {event.venue}
+                  </a>
+                  <p className="text-[#8b6b5c]">{event.address}</p>
+                </div>
+
+                {/* Grammar Focus */}
+                <div>
+                  <div className="flex items-center gap-2 text-[#d4867a] mb-2">
+                    <span className="text-xl">🔤</span>
+                    <span className="text-sm font-medium uppercase tracking-wide">Grammar Focus</span>
+                  </div>
+                  <div className="space-y-1">
+                    {Object.entries(event.grammarFocus).map(([level, grammar]) => (
+                      <p key={level} className="text-[#5a3d2a]">
+                        <span className="font-bold">{level}:</span> {grammar}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Vocabulary */}
+                <div>
+                  <div className="flex items-center gap-2 text-[#d4867a] mb-2">
+                    <span className="text-xl">📚</span>
+                    <span className="text-sm font-medium uppercase tracking-wide">Vocabulary</span>
+                  </div>
+                  <p className="text-[#5a3d2a]">{event.vocabulary}</p>
+                </div>
+
+                {/* Costs */}
+                <div>
+                  <div className="flex items-center gap-2 text-[#d4867a] mb-2">
+                    <span className="text-xl">💰</span>
+                    <span className="text-sm font-medium uppercase tracking-wide">Costs</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[#5a3d2a] font-medium">
+                      {event.title} — {event.duration} hours — {event.costDisplay}
+                    </p>
+                    <p className="text-[#8b6b5c] text-sm">
+                      {event.costBreakdown}
+                    </p>
+                    {event.menuUrl && (
+                      <a 
+                        href={event.menuUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#d4867a] underline text-sm inline-block mt-1"
+                      >
+                        View menu →
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Book Button */}
+                <Button 
+                  onClick={() => handleBookClick(event)}
+                  className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full w-full sm:w-auto"
+                >
+                  Book This Event →
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Fee Warning Dialog */}
+      <FeeWarningDialog 
+        isOpen={warningOpen} 
+        onClose={() => setWarningOpen(false)} 
+        onAgree={handleAgree}
+        eventTitle={selectedEvent?.title || ''}
+      />
+    </div>
+  );
+}
+
+// Intake Form Page for Class Bookings
+function IntakeFormPage() {
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    nativeLanguage: '',
+    englishExperience: '',
+    learningGoals: '',
+    preferredSchedule: '',
+    classType: '',
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // In a real app, this would submit to a backend
+    setStep(3); // Go to needs analysis
+  };
+
+  if (step === 1) {
+    return (
+      <div className="min-h-screen bg-[#faf6f3] py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-3xl p-8">
+            <div className="text-center mb-8">
+              <span className="inline-block bg-[#d4867a]/20 text-[#d4867a] px-4 py-2 rounded-full text-sm font-medium mb-4">
+                Step 1 of 3
+              </span>
+              <h1 className="text-3xl font-serif text-[#5a3d2a] mb-2">Student Intake Form</h1>
+              <p className="text-[#8b6b5c]">Tell us about yourself so we can match you with the right class.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-[#5a3d2a] mb-2">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#d4867a] focus:ring-2 focus:ring-[#d4867a]/20 outline-none"
+                  placeholder="Your name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5a3d2a] mb-2">Email</label>
+                <input
+                  type="email"
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#d4867a] focus:ring-2 focus:ring-[#d4867a]/20 outline-none"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5a3d2a] mb-2">Phone</label>
+                <input
+                  type="tel"
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#d4867a] focus:ring-2 focus:ring-[#d4867a]/20 outline-none"
+                  placeholder="216-555-1234"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5a3d2a] mb-2">Native Language</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#d4867a] focus:ring-2 focus:ring-[#d4867a]/20 outline-none"
+                  placeholder="e.g., Spanish, Arabic, Mandarin"
+                  value={formData.nativeLanguage}
+                  onChange={(e) => setFormData({...formData, nativeLanguage: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5a3d2a] mb-2">English Experience</label>
+                <textarea
+                  required
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#d4867a] focus:ring-2 focus:ring-[#d4867a]/20 outline-none resize-none"
+                  placeholder="How long have you been learning English? Have you taken classes before?"
+                  value={formData.englishExperience}
+                  onChange={(e) => setFormData({...formData, englishExperience: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5a3d2a] mb-2">Learning Goals</label>
+                <textarea
+                  required
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#d4867a] focus:ring-2 focus:ring-[#d4867a]/20 outline-none resize-none"
+                  placeholder="What do you want to achieve? (e.g., conversation skills, business English, passing a test)"
+                  value={formData.learningGoals}
+                  onChange={(e) => setFormData({...formData, learningGoals: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5a3d2a] mb-2">Preferred Schedule</label>
+                <select
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#d4867a] focus:ring-2 focus:ring-[#d4867a]/20 outline-none bg-white"
+                  value={formData.preferredSchedule}
+                  onChange={(e) => setFormData({...formData, preferredSchedule: e.target.value})}
+                >
+                  <option value="">Select your preference</option>
+                  <option value="weekday-morning">Weekday Mornings</option>
+                  <option value="weekday-evening">Weekday Evenings</option>
+                  <option value="weekend-morning">Weekend Mornings</option>
+                  <option value="weekend-afternoon">Weekend Afternoons</option>
+                  <option value="flexible">Flexible</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#5a3d2a] mb-2">Class Type Interest</label>
+                <select
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#d4867a] focus:ring-2 focus:ring-[#d4867a]/20 outline-none bg-white"
+                  value={formData.classType}
+                  onChange={(e) => setFormData({...formData, classType: e.target.value})}
+                >
+                  <option value="">Select class type</option>
+                  <option value="inperson-group">In-Person Group</option>
+                  <option value="virtual-group">Virtual Group</option>
+                  <option value="inperson-individual">In-Person Individual</option>
+                  <option value="virtual-individual">Virtual Individual</option>
+                  <option value="business-english">Business English</option>
+                </select>
+              </div>
+
+              <Button type="submit" className="w-full bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full py-4">
+                Continue to Payment →
+              </Button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <div className="min-h-screen bg-[#faf6f3] py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-3xl p-8 text-center">
+            <div className="text-6xl mb-6">💳</div>
+            <h1 className="text-3xl font-serif text-[#5a3d2a] mb-4">Complete Your Booking</h1>
+            <p className="text-[#8b6b5c] mb-8">
+              Thank you! You'll be redirected to Stripe to complete payment.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/classes">
+                <Button className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full px-8 py-4">
+                  Go to Classes
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Step 3: Needs Analysis
+  return (
+    <div className="min-h-screen bg-[#faf6f3] py-12 px-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white rounded-3xl p-8">
+          <div className="text-center mb-8">
+            <span className="inline-block bg-[#d4867a]/20 text-[#d4867a] px-4 py-2 rounded-full text-sm font-medium mb-4">
+              Step 3 of 3
+            </span>
+            <h1 className="text-3xl font-serif text-[#5a3d2a] mb-2">Quick Needs Analysis</h1>
+            <p className="text-[#8b6b5c]">Help us understand your specific needs better.</p>
+          </div>
+
+          <form className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-[#5a3d2a] mb-2">What situations do you use English in?</label>
+              <div className="space-y-2">
+                {['Work/Professional', 'School/University', 'Social situations', 'Travel', 'Family'].map((option) => (
+                  <label key={option} className="flex items-center gap-2">
+                    <input type="checkbox" className="w-4 h-4 text-[#d4867a] rounded" />
+                    <span className="text-[#5a3d2a]">{option}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#5a3d2a] mb-2">What areas do you want to improve?</label>
+              <div className="space-y-2">
+                {['Speaking/Conversation', 'Listening', 'Reading', 'Writing', 'Grammar', 'Vocabulary', 'Pronunciation'].map((option) => (
+                  <label key={option} className="flex items-center gap-2">
+                    <input type="checkbox" className="w-4 h-4 text-[#d4867a] rounded" />
+                    <span className="text-[#5a3d2a]">{option}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[#5a3d2a] mb-2">Anything else we should know?</label>
+              <textarea
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-[#d4867a] focus:ring-2 focus:ring-[#d4867a]/20 outline-none resize-none"
+                placeholder="Any concerns, preferences, or special requests..."
+              />
+            </div>
+
+            <Link to="/classes">
+              <Button className="w-full bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full py-4">
+                Complete & View Classes →
+              </Button>
+            </Link>
+          </form>
         </div>
       </div>
     </div>
@@ -1974,6 +2481,8 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/classes" element={<ClassesPage />} />
             <Route path="/events" element={<EventsPage />} />
+            <Route path="/event-booking" element={<EventBookingPage />} />
+            <Route path="/intake" element={<IntakeFormPage />} />
             <Route path="/how-it-works" element={<HowItWorksPage />} />
             <Route path="/level-guide" element={<LevelGuidePage />} />
             <Route path="/about" element={<AboutPage />} />
