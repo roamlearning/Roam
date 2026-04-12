@@ -333,7 +333,7 @@ function HomePage() {
   );
 }
 
-// Class Types Data with Detailed Info
+// Class Types Data with Detailed Info and Stripe Links
 const classTypeData: Record<string, {
   title: string;
   description: string;
@@ -346,6 +346,8 @@ const classTypeData: Record<string, {
   duration: string;
   schedule: string;
   details: string[];
+  stripeSingle?: string;
+  stripeBundle?: string;
 }> = {
   'inperson-group': {
     title: 'In-Person Group Classes',
@@ -365,6 +367,8 @@ const classTypeData: Record<string, {
       'Build confidence speaking with peers at your level',
       'Practice English while enjoying Cleveland\'s beautiful lakefront',
     ],
+    stripeSingle: 'https://buy.stripe.com/3cI4gz5239cj55s6OZc3m03',
+    stripeBundle: 'https://buy.stripe.com/dRmfZh3XZagn69w2yJc3m04',
   },
   'virtual-group': {
     title: 'Virtual Group Classes',
@@ -384,6 +388,8 @@ const classTypeData: Record<string, {
       'Screen sharing for collaborative learning',
       'Recording available for review (upon request)',
     ],
+    stripeSingle: 'https://buy.stripe.com/3cI4gz5239cj55s6OZc3m03',
+    stripeBundle: 'https://buy.stripe.com/dRmfZh3XZagn69w2yJc3m04',
   },
   'inperson-individual': {
     title: 'In-Person Individual Classes',
@@ -403,6 +409,8 @@ const classTypeData: Record<string, {
       'Focus on your specific challenges and interests',
       'Rapid progress with dedicated attention',
     ],
+    stripeSingle: 'https://buy.stripe.com/fZubJ13XZ1JRcxUddnc3m02',
+    stripeBundle: 'https://buy.stripe.com/aFa14ngKLewDbtQddnc3m01',
   },
   'virtual-individual': {
     title: 'Virtual Individual Classes',
@@ -422,6 +430,8 @@ const classTypeData: Record<string, {
       'Focus on your specific learning objectives',
       'Ideal for busy professionals',
     ],
+    stripeSingle: 'https://buy.stripe.com/fZubJ13XZ1JRcxUddnc3m02',
+    stripeBundle: 'https://buy.stripe.com/aFa14ngKLewDbtQddnc3m01',
   },
   'business-english': {
     title: 'Business English / Industry Specific',
@@ -442,6 +452,7 @@ const classTypeData: Record<string, {
       'Industry-specific vocabulary and terminology',
       'Professional writing and documentation support',
     ],
+    stripeSingle: 'https://buy.stripe.com/28E4gz8efdszeG23CNc3m00',
   },
   'interview-prep': {
     title: 'Interview Prep',
@@ -462,6 +473,7 @@ const classTypeData: Record<string, {
       'Learn techniques to handle difficult questions',
       'Polish your professional introduction and closing',
     ],
+    stripeSingle: 'https://buy.stripe.com/fZubJ13XZ1JRcxUddnc3m02',
   },
   'social-events': {
     title: 'Social English Events',
@@ -856,9 +868,22 @@ function ClassesPage() {
                     ))}
                   </ul>
 
-                  <Button className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full w-full sm:w-auto">
-                    Book This Class →
-                  </Button>
+                  <div className="flex flex-wrap gap-3">
+                    {data.stripeSingle && (
+                      <a href={data.stripeSingle} target="_blank" rel="noopener noreferrer">
+                        <Button className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full">
+                          Book Single Class (${data.singlePrice}) →
+                        </Button>
+                      </a>
+                    )}
+                    {data.stripeBundle && data.bundlePrice !== data.singlePrice && (
+                      <a href={data.stripeBundle} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" className="border-[#d4867a] text-[#d4867a] hover:bg-[#d4867a] hover:text-white rounded-full">
+                          Book {data.bundleSize} Classes (${data.bundlePrice}/ea) →
+                        </Button>
+                      </a>
+                    )}
+                  </div>
                 </>
               );
             })()}
@@ -923,9 +948,13 @@ function ClassesPage() {
                           ))}
                         </ul>
 
-                        <Button className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full w-full sm:w-auto">
-                          Book this class →
-                        </Button>
+                        {selectedClassType && classTypeData[selectedClassType].stripeSingle && (
+                          <a href={classTypeData[selectedClassType].stripeSingle} target="_blank" rel="noopener noreferrer">
+                            <Button className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full w-full sm:w-auto">
+                              Book this class →
+                            </Button>
+                          </a>
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
