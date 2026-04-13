@@ -9,7 +9,9 @@ import {
   Type, Grid3X3, Dices,
   Monitor, Smartphone, Sparkles,
   History, FolderCheck,
-  CheckSquare, Zap
+  CheckSquare, Zap,
+  ChevronLeft, ChevronRight as ChevronRightIcon,
+  FileText, Award
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +22,7 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 // ==================== TYPES ====================
 type UserRole = 'teacher' | 'content-creator';
@@ -64,44 +67,7 @@ interface Student {
   streakDays: number;
 }
 
-interface Slide {
-  id: string;
-  title: string;
-  content: string;
-  order: number;
-}
 
-interface Homework {
-  id: string;
-  title: string;
-  description: string;
-  dueDays: number;
-}
-
-// Lesson interface - used for curriculum data structure
-interface Lesson {
-  id: string;
-  title: string;
-  description: string;
-  grammarFocus: string[];
-  vocabularyThemes: string[];
-  estimatedMinutes: number;
-  prerequisites: string[];
-  materials: string[];
-  activities: string[];
-  slides: Slide[];
-  homework: Homework | null;
-  verificationQuestions: VerificationQuestion[];
-  topics: string[];
-}
-// Export to avoid "declared but never used" error
-export type { Lesson };
-
-interface VerificationQuestion {
-  id: string;
-  question: string;
-  expectedAnswer: string;
-}
 
 interface Class {
   id: string;
@@ -155,8 +121,47 @@ interface GameConfig {
   createdAt: string;
 }
 
+interface GradingRubric {
+  id: string;
+  name: string;
+  criteria: { name: string; points: number; description: string }[];
+}
+
+// ==================== GRADING RUBRICS ====================
+const gradingRubrics: GradingRubric[] = [
+  {
+    id: 'writing',
+    name: 'Writing Assignment',
+    criteria: [
+      { name: 'Grammar & Structure', points: 30, description: 'Correct grammar, sentence structure' },
+      { name: 'Vocabulary Usage', points: 25, description: 'Appropriate word choice and variety' },
+      { name: 'Content & Ideas', points: 25, description: 'Clear, relevant, well-developed ideas' },
+      { name: 'Organization', points: 20, description: 'Logical flow and structure' },
+    ]
+  },
+  {
+    id: 'speaking',
+    name: 'Speaking/Introduction',
+    criteria: [
+      { name: 'Pronunciation', points: 30, description: 'Clear, understandable pronunciation' },
+      { name: 'Fluency', points: 25, description: 'Smooth speech without long pauses' },
+      { name: 'Vocabulary', points: 25, description: 'Appropriate word choice' },
+      { name: 'Completeness', points: 20, description: 'All required information included' },
+    ]
+  },
+  {
+    id: 'game',
+    name: 'Game/Quiz',
+    criteria: [
+      { name: 'Accuracy', points: 50, description: 'Correct answers' },
+      { name: 'Completion', points: 30, description: 'Finished all questions' },
+      { name: 'Effort', points: 20, description: 'Demonstrated effort and engagement' },
+    ]
+  },
+];
+
 // ==================== GAME TEMPLATES ====================
-const gameTemplates: { id: GameType; name: string; description: string; icon: any; supports: string[] }[] = [
+const gameTemplates: { id: GameType; name: string; description: string; icon: typeof BookMarked; supports: string[] }[] = [
   { id: 'flashcards', name: 'Flashcards', description: 'Digital flashcards with pronunciation', icon: BookMarked, supports: ['vocabulary', 'phrases'] },
   { id: 'matching', name: 'Matching Game', description: 'Match words to definitions/images', icon: Grid3X3, supports: ['vocabulary', 'collocations'] },
   { id: 'fill-blank', name: 'Fill in the Blank', description: 'Complete sentences with correct words', icon: Type, supports: ['grammar', 'vocabulary'] },
@@ -187,7 +192,6 @@ const mockClasses: Class[] = [
   { id: 'C002', name: 'Private B1', type: 'private', level: 'B1', schedule: 'Tue/Thu 2:00 PM', nextClassDate: '2025-05-14', students: [mockStudents[2]], completedLessons: [], mode: 'modular', prepConfirmedLessons: [], assignedCurriculum: ['B1-L01', 'B1-L02', 'B1-L03'] },
 ];
 
-// Calendar events for future use - defined but not currently used in UI
 const mockCalendarEvents: CalendarEvent[] = [
   { id: 'e1', date: '2025-05-14', time: '14:00', title: 'Private B1 - Lesson', type: 'lesson', classId: 'C002', lessonId: 'B1-L01', description: 'Present Perfect Experiences' },
   { id: 'e2', date: '2025-05-13', time: '10:00', title: 'Grade: Intro & Greetings HW', type: 'grading-due', classId: 'C001', description: 'Grade homework from 48 hours ago' },
@@ -195,8 +199,6 @@ const mockCalendarEvents: CalendarEvent[] = [
   { id: 'e4', date: '2025-05-15', time: '10:00', title: 'Morning A1 - Lesson', type: 'lesson', classId: 'C001', lessonId: 'A1-L02', description: 'Alphabet & Spelling' },
   { id: 'e5', date: '2025-05-16', time: '23:59', title: 'HW Due: Alphabet Practice', type: 'homework-due', classId: 'C001', description: 'Students submit homework' },
 ];
-// Use mockCalendarEvents to avoid unused variable warning
-console.log('Calendar events loaded:', mockCalendarEvents.length);
 
 const mockHomeworkSubmissions: HomeworkSubmission[] = [
   { id: 'HS001', studentId: 'S001', studentName: 'Maria Garcia', classId: 'C001', className: 'Morning A1 Group', assignmentTitle: 'Introduce Yourself', assignmentType: 'homework', submittedDate: '2025-05-13', dueDate: '2025-05-15', content: 'Hello! My name is Maria. I am from Mexico. I am 25 years old...', status: 'pending' },
@@ -415,6 +417,8 @@ function TodoGradingView({ submissions, onGrade }: { submissions: HomeworkSubmis
   const [gradingId, setGradingId] = useState<string | null>(null);
   const [score, setScore] = useState<number>(0);
   const [feedback, setFeedback] = useState('');
+  const [selectedRubric, setSelectedRubric] = useState<string>('writing');
+  const [rubricScores, setRubricScores] = useState<Record<string, number>>({});
 
   const classes = Array.from(new Set(submissions.map(s => s.className)));
   const assignments = Array.from(new Set(submissions.map(s => s.assignmentTitle)));
@@ -423,7 +427,25 @@ function TodoGradingView({ submissions, onGrade }: { submissions: HomeworkSubmis
   if (filterAssignment !== 'all') filtered = filtered.filter(s => s.assignmentTitle === filterAssignment);
   const groupedByAssignment = filtered.reduce((acc, sub) => { if (!acc[sub.assignmentTitle]) acc[sub.assignmentTitle] = []; acc[sub.assignmentTitle].push(sub); return acc; }, {} as Record<string, HomeworkSubmission[]>);
 
-  const handleGrade = () => { if (gradingId) { onGrade(gradingId, score, feedback); setGradingId(null); setScore(0); setFeedback(''); } };
+  const currentRubric = gradingRubrics.find(r => r.id === selectedRubric);
+  const totalRubricPoints = currentRubric?.criteria.reduce((sum, c) => sum + c.points, 0) || 100;
+  const currentRubricScore = Object.values(rubricScores).reduce((sum, s) => sum + (s || 0), 0);
+
+  const handleRubricChange = (rubricId: string) => {
+    setSelectedRubric(rubricId);
+    setRubricScores({});
+  };
+
+  const handleGrade = () => { 
+    if (gradingId) { 
+      const finalScore = currentRubric ? Math.round((currentRubricScore / totalRubricPoints) * 100) : score;
+      onGrade(gradingId, finalScore, feedback); 
+      setGradingId(null); 
+      setScore(0); 
+      setFeedback(''); 
+      setRubricScores({});
+    } 
+  };
 
   return (
     <div className="space-y-6">
@@ -446,7 +468,7 @@ function TodoGradingView({ submissions, onGrade }: { submissions: HomeworkSubmis
                       <div className="w-8 h-8 bg-[#fcc4be] rounded-full flex items-center justify-center text-sm font-medium">{sub.studentName.split(' ').map(n => n[0]).join('')}</div>
                       <p className="font-medium text-[#5a3d2a]">{sub.studentName}</p>
                     </div>
-                    <div className="flex items-center gap-2"><span className="text-xs text-[#8b6b5c]">Submitted {sub.submittedDate}</span><Button size="sm" onClick={() => { setGradingId(sub.id); setScore(0); setFeedback(''); }} className="bg-[#d4867a]"><CheckSquare className="w-4 h-4 mr-1" /> Grade</Button></div>
+                    <div className="flex items-center gap-2"><span className="text-xs text-[#8b6b5c]">Submitted {sub.submittedDate}</span><Button size="sm" onClick={() => { setGradingId(sub.id); setScore(0); setFeedback(''); setRubricScores({}); }} className="bg-[#d4867a]"><CheckSquare className="w-4 h-4 mr-1" /> Grade</Button></div>
                   </div>
                   <div className="bg-white p-3 rounded-lg text-sm text-[#5a3d2a]">{sub.content}</div>
                 </div>
@@ -456,12 +478,241 @@ function TodoGradingView({ submissions, onGrade }: { submissions: HomeworkSubmis
         ))}
       </div>
       <Dialog open={!!gradingId} onOpenChange={() => setGradingId(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Grade Submission</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Award className="w-5 h-5" /> Grade Submission</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
-            <div><Label>Score (0-100)</Label><Input type="number" min="0" max="100" value={score} onChange={(e) => setScore(Number(e.target.value))} className="rounded-xl" /></div>
-            <div><Label>Feedback</Label><Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Enter feedback for student..." className="rounded-xl h-24" /></div>
-            <Button onClick={handleGrade} className="w-full bg-[#d4867a]">Submit Grade</Button>
+            {/* Rubric Selection */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Grading Rubric</Label>
+              <Select value={selectedRubric} onValueChange={handleRubricChange}>
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {gradingRubrics.map(r => (
+                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Rubric Criteria */}
+            {currentRubric && (
+              <div className="bg-[#faf6f3] rounded-xl p-4 space-y-3">
+                <p className="text-sm font-medium text-[#5a3d2a]">Criteria Scores</p>
+                {currentRubric.criteria.map(criterion => (
+                  <div key={criterion.name} className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm text-[#5a3d2a]">{criterion.name}</p>
+                      <p className="text-xs text-[#8b6b5c]">{criterion.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={criterion.points}
+                        value={rubricScores[criterion.name] || ''}
+                        onChange={(e) => setRubricScores(prev => ({ ...prev, [criterion.name]: Number(e.target.value) }))}
+                        className="w-20 rounded-lg text-right"
+                      />
+                      <span className="text-sm text-[#8b6b5c]">/ {criterion.points}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="border-t pt-2 flex justify-between items-center">
+                  <p className="text-sm font-medium text-[#5a3d2a]">Total Score</p>
+                  <p className="text-lg font-bold text-[#d4867a]">{currentRubricScore} / {totalRubricPoints} ({Math.round((currentRubricScore / totalRubricPoints) * 100)}%)</p>
+                </div>
+              </div>
+            )}
+
+            {/* Manual Score Override */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Final Score (0-100)</Label>
+              <Input 
+                type="number" 
+                min="0" 
+                max="100" 
+                value={score || Math.round((currentRubricScore / totalRubricPoints) * 100)} 
+                onChange={(e) => setScore(Number(e.target.value))} 
+                className="rounded-xl" 
+              />
+            </div>
+
+            {/* Feedback */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Feedback</Label>
+              <Textarea 
+                value={feedback} 
+                onChange={(e) => setFeedback(e.target.value)} 
+                placeholder="Enter feedback for student..." 
+                className="rounded-xl h-24" 
+              />
+            </div>
+
+            {/* Quick Feedback Buttons */}
+            <div className="flex flex-wrap gap-2">
+              {['Great job!', 'Keep practicing!', 'Excellent work!', 'Good effort!', 'Needs more practice'].map(quickFeedback => (
+                <button
+                  key={quickFeedback}
+                  onClick={() => setFeedback(prev => prev ? prev + ' ' + quickFeedback : quickFeedback)}
+                  className="px-3 py-1.5 bg-gray-100 rounded-full text-sm text-[#5a3d2a] hover:bg-gray-200 transition-colors"
+                >
+                  {quickFeedback}
+                </button>
+              ))}
+            </div>
+
+            <Button onClick={handleGrade} className="w-full bg-[#d4867a]">
+              <CheckCircle className="w-4 h-4 mr-2" /> Submit Grade
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ==================== CALENDAR VIEW ====================
+function CalendarView({ events }: { events: CalendarEvent[] }) {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  const getEventsForDay = (day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return events.filter(e => e.date === dateStr);
+  };
+  
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  
+  return (
+    <div className="space-y-4">
+      {/* Calendar Header */}
+      <div className="flex items-center justify-between">
+        <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <h3 className="text-lg font-medium text-[#5a3d2a]">{monthNames[month]} {year}</h3>
+        <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <ChevronRightIcon className="w-5 h-5" />
+        </button>
+      </div>
+      
+      {/* Day Headers */}
+      <div className="grid grid-cols-7 gap-1">
+        {dayNames.map(day => (
+          <div key={day} className="text-center text-xs text-[#8b6b5c] py-2 font-medium">
+            {day}
+          </div>
+        ))}
+      </div>
+      
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {/* Empty cells for days before the first day of month */}
+        {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+          <div key={`empty-${i}`} className="aspect-square" />
+        ))}
+        
+        {/* Days */}
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+          const dayEvents = getEventsForDay(day);
+          const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+          
+          return (
+            <button
+              key={day}
+              onClick={() => dayEvents.length > 0 && setSelectedEvent(dayEvents[0])}
+              className={`aspect-square p-1 rounded-lg border transition-colors relative ${
+                isToday ? 'border-[#d4867a] bg-[#faf6f3]' : 'border-gray-100 hover:border-gray-200'
+              } ${dayEvents.length > 0 ? 'cursor-pointer' : ''}`}
+            >
+              <span className={`text-sm ${isToday ? 'font-bold text-[#d4867a]' : 'text-[#5a3d2a]'}`}>{day}</span>
+              {dayEvents.length > 0 && (
+                <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
+                  {dayEvents.slice(0, 3).map((e, i) => (
+                    <div 
+                      key={i} 
+                      className={`h-1.5 flex-1 rounded-full ${
+                        e.type === 'lesson' ? 'bg-blue-400' : 
+                        e.type === 'grading-due' ? 'bg-orange-400' : 
+                        e.type === 'homework-due' ? 'bg-red-400' : 
+                        'bg-green-400'
+                      }`} 
+                    />
+                  ))}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 text-xs">
+        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-blue-400" /> Lesson</div>
+        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-orange-400" /> Grading Due</div>
+        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-red-400" /> Homework Due</div>
+        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-green-400" /> Prep Confirm</div>
+      </div>
+      
+      {/* Upcoming Events List */}
+      <div className="bg-[#faf6f3] rounded-2xl p-4">
+        <h4 className="font-medium text-[#5a3d2a] mb-3 flex items-center gap-2">
+          <Clock className="w-4 h-4 text-[#d4867a]" /> Upcoming Events
+        </h4>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {events
+            .filter(e => new Date(e.date) >= new Date())
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .slice(0, 5)
+            .map(event => (
+              <div key={event.id} className="bg-white p-3 rounded-xl flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full ${
+                  event.type === 'lesson' ? 'bg-blue-400' : 
+                  event.type === 'grading-due' ? 'bg-orange-400' : 
+                  event.type === 'homework-due' ? 'bg-red-400' : 
+                  'bg-green-400'
+                }`} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[#5a3d2a]">{event.title}</p>
+                  <p className="text-xs text-[#8b6b5c]">{event.date} • {event.time}</p>
+                </div>
+              </div>
+            ))}
+        </div>
+      </div>
+      
+      {/* Event Detail Dialog */}
+      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{selectedEvent?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-4">
+            <div className="flex items-center gap-2 text-sm text-[#8b6b5c]">
+              <CalendarIcon className="w-4 h-4" />
+              <span>{selectedEvent?.date} at {selectedEvent?.time}</span>
+            </div>
+            <Badge className={
+              selectedEvent?.type === 'lesson' ? 'bg-blue-500' : 
+              selectedEvent?.type === 'grading-due' ? 'bg-orange-500' : 
+              selectedEvent?.type === 'homework-due' ? 'bg-red-500' : 
+              'bg-green-500'
+            }>
+              {selectedEvent?.type}
+            </Badge>
+            <p className="text-sm text-[#5a3d2a]">{selectedEvent?.description}</p>
           </div>
         </DialogContent>
       </Dialog>
@@ -559,22 +810,117 @@ function GameCreator({ classes, onCreateGame }: { classes: Class[]; onCreateGame
   );
 }
 
+// ==================== CREATE CLASS DIALOG ====================
+function CreateClassDialog({ isOpen, onClose, onCreate }: { isOpen: boolean; onClose: () => void; onCreate: (cls: Class) => void }) {
+  const [name, setName] = useState('');
+  const [type, setType] = useState<Class['type']>('group');
+  const [level, setLevel] = useState('A1');
+  const [schedule, setSchedule] = useState('');
+  const [mode, setMode] = useState<Class['mode']>('structured');
+
+  const handleSubmit = () => {
+    if (name && schedule) {
+      const newClass: Class = {
+        id: `C${Date.now()}`,
+        name,
+        type,
+        level,
+        schedule,
+        nextClassDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        students: [],
+        completedLessons: [],
+        mode,
+        prepConfirmedLessons: [],
+        assignedCurriculum: [],
+      };
+      onCreate(newClass);
+      onClose();
+      setName('');
+      setSchedule('');
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Plus className="w-5 h-5" /> Create New Class</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 mt-4">
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Class Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Evening A2 Group" className="rounded-xl" />
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Class Type</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['private', 'semi-private', 'small-group', 'group'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setType(t)}
+                  className={`p-3 rounded-xl border-2 text-sm transition-colors ${type === t ? 'border-[#d4867a] bg-[#faf6f3]' : 'border-gray-200'}`}
+                >
+                  {t.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Level</Label>
+            <Select value={level} onValueChange={setLevel}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map(l => (
+                  <SelectItem key={l} value={l}>{l}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Schedule</Label>
+            <Input value={schedule} onChange={(e) => setSchedule(e.target.value)} placeholder="e.g., Mon/Wed 10:00 AM" className="rounded-xl" />
+          </div>
+          <div>
+            <Label className="text-sm font-medium mb-2 block">Teaching Mode</Label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setMode('structured')}
+                className={`flex-1 p-3 rounded-xl border-2 text-sm transition-colors ${mode === 'structured' ? 'border-[#d4867a] bg-[#faf6f3]' : 'border-gray-200'}`}
+              >
+                <FileText className="w-5 h-5 mx-auto mb-1" />
+                Structured
+              </button>
+              <button
+                onClick={() => setMode('modular')}
+                className={`flex-1 p-3 rounded-xl border-2 text-sm transition-colors ${mode === 'modular' ? 'border-[#d4867a] bg-[#faf6f3]' : 'border-gray-200'}`}
+              >
+                <Grid3X3 className="w-5 h-5 mx-auto mb-1" />
+                Modular
+              </button>
+            </div>
+          </div>
+          <Button onClick={handleSubmit} className="w-full bg-[#d4867a]">
+            <CheckCircle className="w-4 h-4 mr-2" /> Create Class
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ==================== MAIN TEACHER DASHBOARD ====================
 function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>('classes');
-  const [classes] = useState<Class[]>(mockClasses);
+  const [classes, setClasses] = useState<Class[]>(mockClasses);
   const [students] = useState<Student[]>(mockStudents);
   const [submissions, setSubmissions] = useState<HomeworkSubmission[]>(mockHomeworkSubmissions);
   const [games, setGames] = useState<GameConfig[]>(mockGames);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [, setSelectedClass] = useState<Class | null>(null);
-  const [, setShowCreateDialog] = useState(false);
-  const [, setShowCurriculumDialog] = useState(false);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(mockCalendarEvents);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
-  const [, setViewingProgressClass] = useState<Class | null>(null);
   const [calendarSubTab, setCalendarSubTab] = useState<'calendar' | 'todo'>('calendar');
-  // Use setters to avoid unused variable warnings
-  setSelectedClass; setShowCurriculumDialog; setViewingProgressClass;
 
   const handleGrade = (id: string, score: number, feedback: string) => {
     setSubmissions(prev => prev.map(s => s.id === id ? { ...s, status: 'graded', score, feedback } : s));
@@ -582,10 +928,24 @@ function TeacherDashboard() {
 
   const handleCreateGame = (game: GameConfig) => {
     setGames(prev => [...prev, game]);
-    // Find the class and its students
     const targetClass = classes.find(c => c.id === game.classId);
     const studentCount = targetClass?.students.length || 0;
     alert(`Game "${game.title}" created and pushed to ${studentCount} student${studentCount !== 1 ? 's' : ''} in ${targetClass?.name}!\n\nStudents will see this as a new assignment in their portal.`);
+  };
+
+  const handleCreateClass = (newClass: Class) => {
+    setClasses(prev => [...prev, newClass]);
+    // Add a calendar event for the first class
+    const firstClassEvent: CalendarEvent = {
+      id: `e${Date.now()}`,
+      date: newClass.nextClassDate,
+      time: newClass.schedule.split(' ').pop() || '10:00',
+      title: `${newClass.name} - First Lesson`,
+      type: 'lesson',
+      classId: newClass.id,
+      description: 'First class session',
+    };
+    setCalendarEvents(prev => [...prev, firstClassEvent]);
   };
 
   if (viewingStudent) {
@@ -594,7 +954,10 @@ function TeacherDashboard() {
         <header className="bg-[#fcc4be] sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
             <div className="flex items-center justify-between h-16 sm:h-20">
-              <img src="/logo-banner.png" alt="Roam Learning" className="h-10 sm:h-12 w-auto object-contain" />
+              <div className="flex items-center gap-3">
+                <BookOpen className="w-8 h-8 text-[#d4867a]" />
+                <span className="font-serif text-[#5a3d2a] text-xl">Roam Learning</span>
+              </div>
             </div>
           </div>
         </header>
@@ -610,8 +973,11 @@ function TeacherDashboard() {
       <header className="bg-[#fcc4be] sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
-            <img src="/logo-banner.png" alt="Roam Learning" className="h-10 sm:h-12 w-auto object-contain" />
-            <p className="text-xs text-[#5a3d2a]/70">Teacher</p>
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-8 h-8 text-[#d4867a]" />
+              <span className="font-serif text-[#5a3d2a] text-xl hidden sm:block">Roam Learning</span>
+            </div>
+            <p className="text-xs text-[#5a3d2a]/70">Teacher Portal</p>
           </div>
         </div>
       </header>
@@ -678,7 +1044,7 @@ function TeacherDashboard() {
                 </button>
               </div>
               {calendarSubTab === 'calendar' ? (
-                <div className="text-center py-12 text-[#8b6b5c]"><CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-50" /><p>Calendar view coming soon</p></div>
+                <CalendarView events={calendarEvents} />
               ) : (
                 <TodoGradingView submissions={submissions} onGrade={handleGrade} />
               )}
@@ -772,6 +1138,13 @@ function TeacherDashboard() {
           )}
         </div>
       </main>
+
+      {/* Create Class Dialog */}
+      <CreateClassDialog 
+        isOpen={showCreateDialog} 
+        onClose={() => setShowCreateDialog(false)} 
+        onCreate={handleCreateClass} 
+      />
     </div>
   );
 }
@@ -779,8 +1152,7 @@ function TeacherDashboard() {
 // ==================== MAIN EXPORT ====================
 export default function TeacherPortal() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_userRole, setUserRole] = useState<UserRole>('teacher');
+  const [, setUserRole] = useState<UserRole>('teacher');
   const handleLogin = (role: UserRole) => { setUserRole(role); setIsLoggedIn(true); };
   if (!isLoggedIn) return <LoginPage onLogin={handleLogin} />;
   return <TeacherDashboard />;

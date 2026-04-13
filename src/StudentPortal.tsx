@@ -1,14 +1,17 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { 
   BookOpen, Gamepad2, CheckCircle, Clock, 
   Trophy, Flame, Calendar, Bell,
-  ChevronRight, Play, Check,
+  ChevronRight, Play,
   ArrowLeft, Volume2,
   User,
   Home, ClipboardList,
   TrendingUp, Target,
-  Sparkles, Zap,
-  RotateCcw, ChevronLeft, VolumeX
+  Zap, Star,
+  RotateCcw, ChevronLeft, VolumeX,
+  Lightbulb, MapPin, Coffee, Music,
+  GraduationCap, Globe,
+  Utensils, ShoppingBag, Bus, Phone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +19,29 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+// ==================== ENCOURAGEMENT DATA ====================
+const encouragingQuotes = [
+  { text: "Every expert was once a beginner.", author: "Unknown" },
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { text: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { text: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis" },
+];
+
+const englishCultureFacts = [
+  { icon: Coffee, text: "In England, afternoon tea is a tradition at 4 PM!" },
+  { icon: MapPin, text: "The Queen's Guard at Buckingham Palace cannot smile or talk!" },
+  { icon: Music, text: "The Beatles, from Liverpool, are the best-selling band ever!" },
+  { icon: Bus, text: "London's red double-decker buses are famous worldwide!" },
+  { icon: Utensils, text: "Fish and chips is the most popular takeaway food in the UK!" },
+  { icon: ShoppingBag, text: "Harrods in London has over 330 departments!" },
+  { icon: Phone, text: "The first telephone call was made by Alexander Graham Bell in 1876!" },
+  { icon: Globe, text: "English is spoken by over 1.5 billion people worldwide!" },
+];
 
 // ==================== TEXT-TO-SPEECH HOOK ====================
 function useTextToSpeech() {
@@ -25,7 +51,6 @@ function useTextToSpeech() {
   const speak = useCallback((text: string) => {
     if (isMuted || !window.speechSynthesis) return;
     
-    // Cancel any ongoing speech
     window.speechSynthesis.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
@@ -69,6 +94,7 @@ interface StudentAssignment {
   feedback?: string;
   content?: string;
   teacherName: string;
+  icon?: string;
 }
 
 interface GameActivity {
@@ -106,6 +132,7 @@ interface TangibleSkill {
   unlocked: boolean;
   completed: boolean;
   category: 'daily' | 'social' | 'professional' | 'academic';
+  icon: string;
 }
 
 interface GrowthGoal {
@@ -116,6 +143,7 @@ interface GrowthGoal {
   unlocked: boolean;
   selected: boolean;
   category: 'personal' | 'career' | 'social';
+  icon: string;
 }
 
 interface StudentData {
@@ -151,10 +179,10 @@ const mockStudentData: StudentData = {
   attendance: 92,
   joinDate: '2025-01-15',
   assignments: [
-    { id: 'A001', title: 'Introduce Yourself - Writing', type: 'homework', assignedDate: '2025-05-08', dueDate: '2025-05-15', status: 'submitted', score: 85, feedback: 'Great work! Try to use more descriptive adjectives.', teacherName: 'Ms. Johnson' },
-    { id: 'A002', title: 'Alphabet Flashcards', type: 'game', assignedDate: '2025-05-10', dueDate: '2025-05-17', status: 'pending', teacherName: 'Ms. Johnson' },
-    { id: 'A003', title: 'Family Vocabulary Practice', type: 'game', assignedDate: '2025-05-13', dueDate: '2025-05-20', status: 'pending', teacherName: 'Ms. Johnson' },
-    { id: 'A004', title: 'Numbers & Counting Worksheet', type: 'homework', assignedDate: '2025-05-14', dueDate: '2025-05-21', status: 'pending', teacherName: 'Ms. Johnson' },
+    { id: 'A001', title: 'Introduce Yourself - Writing', type: 'homework', assignedDate: '2025-05-08', dueDate: '2025-05-15', status: 'submitted', score: 85, feedback: 'Great work! Try to use more descriptive adjectives.', teacherName: 'Ms. Johnson', icon: 'write' },
+    { id: 'A002', title: 'Alphabet Flashcards', type: 'game', assignedDate: '2025-05-10', dueDate: '2025-05-17', status: 'pending', teacherName: 'Ms. Johnson', icon: 'abc' },
+    { id: 'A003', title: 'Family Vocabulary Practice', type: 'game', assignedDate: '2025-05-13', dueDate: '2025-05-20', status: 'pending', teacherName: 'Ms. Johnson', icon: 'family' },
+    { id: 'A004', title: 'Numbers & Counting Worksheet', type: 'homework', assignedDate: '2025-05-14', dueDate: '2025-05-21', status: 'pending', teacherName: 'Ms. Johnson', icon: '123' },
   ],
   games: [
     { id: 'G001', title: 'Alphabet Flashcards', type: 'flashcards', topics: ['Alphabet'], verbTenses: [], mode: 'asynchronous', status: 'not-started' },
@@ -177,29 +205,101 @@ const mockStudentData: StudentData = {
     { topic: 'Daily Routines', status: 'not-started', score: 0, lessonsCompleted: 0 },
   ],
   tangibleSkills: [
-    { id: 'TS001', title: 'Introduce yourself to someone new', description: 'Say your name, where you are from, and what you do', requiredLevel: 'A1', requiredTopics: ['Greetings', 'Introductions'], unlocked: true, completed: true, category: 'social' },
-    { id: 'TS002', title: 'Order food at a restaurant', description: 'Read a menu and order your meal', requiredLevel: 'A1', requiredTopics: ['Food', 'Numbers'], unlocked: true, completed: false, category: 'daily' },
-    { id: 'TS003', title: 'Ask for and give directions', description: 'Navigate to a location and help others find their way', requiredLevel: 'A1', requiredTopics: ['Directions', 'Places'], unlocked: false, completed: false, category: 'daily' },
-    { id: 'TS004', title: 'Talk about your daily routine', description: 'Describe what you do from morning to evening', requiredLevel: 'A1', requiredTopics: ['Daily Routines', 'Time'], unlocked: false, completed: false, category: 'daily' },
-    { id: 'TS005', title: 'Describe your family members', description: 'Talk about who is in your family and their relationships', requiredLevel: 'A1', requiredTopics: ['Family'], unlocked: true, completed: false, category: 'social' },
-    { id: 'TS006', title: 'Explain what activities you enjoy', description: 'Share your hobbies and why you like them', requiredLevel: 'A2', requiredTopics: ['Hobbies', 'Likes/Dislikes'], unlocked: false, completed: false, category: 'social' },
-    { id: 'TS007', title: 'Discuss future plans', description: 'Talk about what you want to do tomorrow, next week, or next year', requiredLevel: 'A2', requiredTopics: ['Future Tenses', 'Plans'], unlocked: false, completed: false, category: 'professional' },
-    { id: 'TS008', title: 'Present data from a graph', description: 'Describe trends and numbers from visual information', requiredLevel: 'B1', requiredTopics: ['Numbers', 'Comparisons'], unlocked: false, completed: false, category: 'professional' },
-    { id: 'TS009', title: 'Write a professional email', description: 'Compose formal correspondence for work or school', requiredLevel: 'B1', requiredTopics: ['Writing', 'Formal Language'], unlocked: false, completed: false, category: 'professional' },
-    { id: 'TS010', title: 'Participate in a job interview', description: 'Answer questions about your experience and skills', requiredLevel: 'B2', requiredTopics: ['Work', 'Experience', 'Modal Verbs'], unlocked: false, completed: false, category: 'professional' },
+    { id: 'TS001', title: 'Introduce yourself to someone new', description: 'Say your name, where you are from, and what you do', requiredLevel: 'A1', requiredTopics: ['Greetings', 'Introductions'], unlocked: true, completed: true, category: 'social', icon: 'wave' },
+    { id: 'TS002', title: 'Order food at a restaurant', description: 'Read a menu and order your meal', requiredLevel: 'A1', requiredTopics: ['Food', 'Numbers'], unlocked: true, completed: false, category: 'daily', icon: 'food' },
+    { id: 'TS003', title: 'Ask for and give directions', description: 'Navigate to a location and help others find their way', requiredLevel: 'A1', requiredTopics: ['Directions', 'Places'], unlocked: false, completed: false, category: 'daily', icon: 'map' },
+    { id: 'TS004', title: 'Talk about your daily routine', description: 'Describe what you do from morning to evening', requiredLevel: 'A1', requiredTopics: ['Daily Routines', 'Time'], unlocked: false, completed: false, category: 'daily', icon: 'clock' },
+    { id: 'TS005', title: 'Describe your family members', description: 'Talk about who is in your family and their relationships', requiredLevel: 'A1', requiredTopics: ['Family'], unlocked: true, completed: false, category: 'social', icon: 'family' },
+    { id: 'TS006', title: 'Explain what activities you enjoy', description: 'Share your hobbies and why you like them', requiredLevel: 'A2', requiredTopics: ['Hobbies', 'Likes/Dislikes'], unlocked: false, completed: false, category: 'social', icon: 'heart' },
+    { id: 'TS007', title: 'Discuss future plans', description: 'Talk about what you want to do tomorrow, next week, or next year', requiredLevel: 'A2', requiredTopics: ['Future Tenses', 'Plans'], unlocked: false, completed: false, category: 'professional', icon: 'calendar' },
+    { id: 'TS008', title: 'Present data from a graph', description: 'Describe trends and numbers from visual information', requiredLevel: 'B1', requiredTopics: ['Numbers', 'Comparisons'], unlocked: false, completed: false, category: 'professional', icon: 'chart' },
+    { id: 'TS009', title: 'Write a professional email', description: 'Compose formal correspondence for work or school', requiredLevel: 'B1', requiredTopics: ['Writing', 'Formal Language'], unlocked: false, completed: false, category: 'professional', icon: 'mail' },
+    { id: 'TS010', title: 'Participate in a job interview', description: 'Answer questions about your experience and skills', requiredLevel: 'B2', requiredTopics: ['Work', 'Experience', 'Modal Verbs'], unlocked: false, completed: false, category: 'professional', icon: 'briefcase' },
   ],
   growthGoals: [
-    { id: 'GG001', title: 'Have a 5-minute conversation with a native speaker', description: 'Practice speaking without fear of mistakes', requiredLevel: 'A1', unlocked: true, selected: false, category: 'personal' },
-    { id: 'GG002', title: 'Watch an English movie without subtitles', description: 'Understand the main plot and key dialogue', requiredLevel: 'A2', unlocked: true, selected: true, category: 'personal' },
-    { id: 'GG003', title: 'Read a short English book', description: 'Finish a book and understand the story', requiredLevel: 'A2', unlocked: false, selected: false, category: 'personal' },
-    { id: 'GG004', title: 'Give a presentation in English', description: 'Present a topic to your class or colleagues', requiredLevel: 'B1', unlocked: false, selected: false, category: 'career' },
-    { id: 'GG005', title: 'Write a blog post in English', description: 'Share your thoughts on a topic you care about', requiredLevel: 'B1', unlocked: false, selected: false, category: 'personal' },
-    { id: 'GG006', title: 'Negotiate a price or deal', description: 'Discuss terms and reach an agreement', requiredLevel: 'B2', unlocked: false, selected: false, category: 'career' },
-    { id: 'GG007', title: 'Make friends who only speak English', description: 'Build genuine relationships through language', requiredLevel: 'B1', unlocked: false, selected: false, category: 'social' },
-    { id: 'GG008', title: 'Travel to an English-speaking country', description: 'Navigate daily life using only English', requiredLevel: 'B2', unlocked: false, selected: false, category: 'personal' },
+    { id: 'GG001', title: 'Have a 5-minute conversation with a native speaker', description: 'Practice speaking without fear of mistakes', requiredLevel: 'A1', unlocked: true, selected: false, category: 'personal', icon: 'chat' },
+    { id: 'GG002', title: 'Watch an English movie without subtitles', description: 'Understand the main plot and key dialogue', requiredLevel: 'A2', unlocked: true, selected: true, category: 'personal', icon: 'movie' },
+    { id: 'GG003', title: 'Read a short English book', description: 'Finish a book and understand the story', requiredLevel: 'A2', unlocked: false, selected: false, category: 'personal', icon: 'book' },
+    { id: 'GG004', title: 'Give a presentation in English', description: 'Present a topic to your class or colleagues', requiredLevel: 'B1', unlocked: false, selected: false, category: 'career', icon: 'presentation' },
+    { id: 'GG005', title: 'Write a blog post in English', description: 'Share your thoughts on a topic you care about', requiredLevel: 'B1', unlocked: false, selected: false, category: 'personal', icon: 'edit' },
+    { id: 'GG006', title: 'Negotiate a price or deal', description: 'Discuss terms and reach an agreement', requiredLevel: 'B2', unlocked: false, selected: false, category: 'career', icon: 'handshake' },
+    { id: 'GG007', title: 'Make friends who only speak English', description: 'Build genuine relationships through language', requiredLevel: 'B1', unlocked: false, selected: false, category: 'social', icon: 'users' },
+    { id: 'GG008', title: 'Travel to an English-speaking country', description: 'Navigate daily life using only English', requiredLevel: 'B2', unlocked: false, selected: false, category: 'personal', icon: 'plane' },
   ],
   achievements: ['First Assignment', '5-Day Streak', 'Perfect Score'],
 };
+
+// ==================== MASCOT COMPONENT ====================
+function Mascot({ emotion, size = 'md', className = '' }: { emotion: string; size?: 'sm' | 'md' | 'lg'; className?: string }) {
+  const sizeClasses = {
+    sm: 'w-12 h-12',
+    md: 'w-16 h-16',
+    lg: 'w-24 h-24'
+  };
+  
+  const mascotSrc = `/mascot-${emotion}.png`;
+  
+  return (
+    <img 
+      src={mascotSrc} 
+      alt={`Roam mascot - ${emotion}`}
+      className={`${sizeClasses[size]} object-contain ${className}`}
+      onError={(e) => {
+        // Fallback to a default icon if image fails to load
+        e.currentTarget.style.display = 'none';
+      }}
+    />
+  );
+}
+
+// ==================== ENCOURAGEMENT BANNER ====================
+function EncouragementBanner() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showFact, setShowFact] = useState(false);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (showFact) {
+        setShowFact(false);
+      } else {
+        setCurrentIndex((prev) => (prev + 1) % encouragingQuotes.length);
+        setShowFact(Math.random() > 0.7);
+      }
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [showFact]);
+  
+  if (showFact) {
+    const fact = englishCultureFacts[currentIndex % englishCultureFacts.length];
+    const Icon = fact.icon;
+    return (
+      <div className="bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl p-4 text-white">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <Icon className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-white/80 uppercase tracking-wide">Did You Know?</p>
+            <p className="text-sm">{fact.text}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  const quote = encouragingQuotes[currentIndex];
+  return (
+    <div className="bg-gradient-to-r from-[#d4867a] to-[#fcc4be] rounded-2xl p-4 text-white">
+      <div className="flex items-start gap-3">
+        <Mascot emotion="cheer" size="sm" className="flex-shrink-0" />
+        <div>
+          <p className="text-sm font-medium">"{quote.text}"</p>
+          <p className="text-xs text-white/70 mt-1">— {quote.author}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ==================== LOGIN ====================
 function StudentLogin({ onLogin }: { onLogin: () => void }) {
@@ -210,24 +310,32 @@ function StudentLogin({ onLogin }: { onLogin: () => void }) {
     <div className="min-h-screen bg-[#faf6f3] flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-[#d4867a] rounded-full flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="w-8 h-8 text-white" />
+          <div className="flex justify-center mb-4">
+            <Mascot emotion="happy" size="lg" />
           </div>
           <h1 className="text-2xl font-serif text-[#5a3d2a]">Student Portal</h1>
           <p className="text-[#8b6b5c] mt-1">Welcome back! Continue your learning journey.</p>
         </div>
 
         <form onSubmit={(e) => { e.preventDefault(); if (email && password) onLogin(); }} className="space-y-4">
-          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="rounded-xl h-12" />
-          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="rounded-xl h-12" />
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8b6b5c]" />
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="rounded-xl h-12 pl-10" />
+          </div>
+          <div className="relative">
+            <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8b6b5c]" />
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="rounded-xl h-12 pl-10" />
+          </div>
           <Button type="submit" className="w-full bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full h-12">
-            Sign In
+            <Play className="w-4 h-4 mr-2" /> Sign In
           </Button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-[#8b6b5c]">Don't have an account?</p>
-          <button className="text-[#d4867a] font-medium mt-1">Contact your teacher</button>
+          <button className="text-[#d4867a] font-medium mt-1 flex items-center justify-center gap-1 mx-auto">
+            <GraduationCap className="w-4 h-4" /> Contact your teacher
+          </button>
         </div>
       </div>
     </div>
@@ -237,23 +345,23 @@ function StudentLogin({ onLogin }: { onLogin: () => void }) {
 // ==================== FLASHCARD GAME ====================
 function FlashcardGame({ onComplete, reviewMode = false }: { onComplete: (score: number) => void; reviewMode?: boolean }) {
   const [currentCard, setCurrentCard] = useState(0);
-  const [flipped, setFlipped] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState(false);
   const { speak, isSpeaking, isMuted, toggleMute } = useTextToSpeech();
 
   const cards = [
-    { front: 'A', back: '/eɪ/ as in "apple"', example: 'Apple, Ant, Arrow', audioText: 'A. Apple. Ant. Arrow.' },
-    { front: 'B', back: '/biː/ as in "ball"', example: 'Ball, Book, Bird', audioText: 'B. Ball. Book. Bird.' },
-    { front: 'C', back: '/siː/ as in "cat"', example: 'Cat, Car, Cup', audioText: 'C. Cat. Car. Cup.' },
-    { front: 'D', back: '/diː/ as in "dog"', example: 'Dog, Door, Desk', audioText: 'D. Dog. Door. Desk.' },
-    { front: 'E', back: '/iː/ as in "egg"', example: 'Egg, Elephant, Eagle', audioText: 'E. Egg. Elephant. Eagle.' },
+    { front: 'A', back: '/eɪ/ as in "apple"', example: 'Apple, Ant, Arrow', audioText: 'A. Apple. Ant. Arrow.', image: '🍎' },
+    { front: 'B', back: '/biː/ as in "ball"', example: 'Ball, Book, Bird', audioText: 'B. Ball. Book. Bird.', image: '⚽' },
+    { front: 'C', back: '/siː/ as in "cat"', example: 'Cat, Car, Cup', audioText: 'C. Cat. Car. Cup.', image: '🐱' },
+    { front: 'D', back: '/diː/ as in "dog"', example: 'Dog, Door, Desk', audioText: 'D. Dog. Door. Desk.', image: '🐕' },
+    { front: 'E', back: '/iː/ as in "egg"', example: 'Egg, Elephant, Eagle', audioText: 'E. Egg. Elephant. Eagle.', image: '🥚' },
   ];
 
   const handleNext = () => {
     if (currentCard < cards.length - 1) {
       setCurrentCard(c => c + 1);
-      setFlipped(false);
+      setShowAnswer(false);
       setScore(s => s + 20);
     } else {
       setCompleted(true);
@@ -264,27 +372,36 @@ function FlashcardGame({ onComplete, reviewMode = false }: { onComplete: (score:
   const handlePrevious = () => {
     if (currentCard > 0) {
       setCurrentCard(c => c - 1);
-      setFlipped(false);
+      setShowAnswer(false);
     }
   };
 
-  const handleListen = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleListen = () => {
     const card = cards[currentCard];
     speak(card.audioText);
+  };
+
+  const handleCardClick = () => {
+    if (!showAnswer) {
+      setShowAnswer(true);
+    } else {
+      handleNext();
+    }
   };
 
   if (completed) {
     return (
       <div className="text-center py-8">
-        <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+        <Mascot emotion="excited" size="lg" className="mx-auto mb-4" />
         <h3 className="text-2xl font-bold text-[#5a3d2a] mb-2">{reviewMode ? 'Review Complete!' : 'Great Job!'}</h3>
         <p className="text-[#8b6b5c] mb-4">{reviewMode ? 'You reviewed all the flashcards!' : 'You completed the flashcards!'}</p>
         <div className="bg-[#faf6f3] rounded-2xl p-6 mb-4">
           <p className="text-sm text-[#8b6b5c]">Your Score</p>
           <p className="text-4xl font-bold text-[#d4867a]">{score + 20}%</p>
         </div>
-        <Button onClick={() => onComplete(score + 20)} className="bg-[#d4867a]">Continue</Button>
+        <Button onClick={() => onComplete(score + 20)} className="bg-[#d4867a]">
+          <CheckCircle className="w-4 h-4 mr-2" /> Continue
+        </Button>
       </div>
     );
   }
@@ -292,7 +409,10 @@ function FlashcardGame({ onComplete, reviewMode = false }: { onComplete: (score:
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-[#8b6b5c]">Card {currentCard + 1} of {cards.length}</p>
+        <div className="flex items-center gap-2">
+          <Mascot emotion="study" size="sm" />
+          <p className="text-sm text-[#8b6b5c]">Card {currentCard + 1} of {cards.length}</p>
+        </div>
         <div className="flex items-center gap-2">
           <button 
             onClick={toggleMute}
@@ -306,20 +426,25 @@ function FlashcardGame({ onComplete, reviewMode = false }: { onComplete: (score:
       </div>
 
       <div 
-        onClick={() => setFlipped(!flipped)}
-        className="relative h-64 cursor-pointer"
-        style={{ perspective: '1000px' }}
+        onClick={handleCardClick}
+        className="relative h-72 cursor-pointer"
       >
-        <div className={`absolute inset-0 bg-white rounded-3xl shadow-lg flex flex-col items-center justify-center transition-all duration-500 ${flipped ? 'opacity-0' : 'opacity-100'}`}>
+        <div className={`absolute inset-0 bg-white rounded-3xl shadow-lg flex flex-col items-center justify-center transition-all duration-300 ${showAnswer ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          <span className="text-7xl mb-4">{cards[currentCard].image}</span>
           <p className="text-6xl font-bold text-[#d4867a]">{cards[currentCard].front}</p>
-          <p className="text-sm text-[#8b6b5c] mt-4">Tap to flip</p>
+          <div className="mt-4 flex items-center gap-2 text-[#8b6b5c]">
+            <Lightbulb className="w-4 h-4" />
+            <p className="text-sm">Tap to see answer</p>
+          </div>
         </div>
-        <div className={`absolute inset-0 bg-[#faf6f3] rounded-3xl shadow-lg flex flex-col items-center justify-center transition-all duration-500 ${flipped ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`absolute inset-0 bg-[#faf6f3] rounded-3xl shadow-lg flex flex-col items-center justify-center transition-all duration-300 ${showAnswer ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <span className="text-5xl mb-4">{cards[currentCard].image}</span>
           <p className="text-2xl font-medium text-[#5a3d2a]">{cards[currentCard].back}</p>
-          <p className="text-sm text-[#8b6b5c] mt-2">Examples: {cards[currentCard].example}</p>
-          <Button onClick={(e) => { e.stopPropagation(); handleNext(); }} className="mt-6 bg-[#d4867a]">
-            <Check className="w-4 h-4 mr-2" /> Got it!
-          </Button>
+          <p className="text-sm text-[#8b6b5c] mt-2">{cards[currentCard].example}</p>
+          <div className="mt-4 flex items-center gap-2 text-[#d4867a]">
+            <CheckCircle className="w-4 h-4" />
+            <p className="text-sm">Tap for next card</p>
+          </div>
         </div>
       </div>
 
@@ -340,6 +465,12 @@ function FlashcardGame({ onComplete, reviewMode = false }: { onComplete: (score:
         >
           <Volume2 className="w-4 h-4 mr-2" /> {isSpeaking ? 'Playing...' : 'Listen'}
         </Button>
+        <Button 
+          onClick={handleNext}
+          className="rounded-full bg-[#d4867a]"
+        >
+          Next <ChevronRight className="w-4 h-4 ml-2" />
+        </Button>
       </div>
     </div>
   );
@@ -353,20 +484,19 @@ function MatchingGame({ onComplete, reviewMode = false }: { onComplete: (score: 
   const { speak, isMuted, toggleMute } = useTextToSpeech();
 
   const pairs = [
-    { id: '1', word: 'Mother', match: 'Mom' },
-    { id: '2', word: 'Father', match: 'Dad' },
-    { id: '3', word: 'Sister', match: 'Sibling (F)' },
-    { id: '4', word: 'Brother', match: 'Sibling (M)' },
+    { id: '1', word: 'Mother', match: 'Mom', icon: '👩' },
+    { id: '2', word: 'Father', match: 'Dad', icon: '👨' },
+    { id: '3', word: 'Sister', match: 'Sibling (F)', icon: '👧' },
+    { id: '4', word: 'Brother', match: 'Sibling (M)', icon: '👦' },
   ];
 
-  const allCards = [...pairs.map(p => ({ id: p.id + 'w', text: p.word, matchId: p.id + 'm' })),
-                   ...pairs.map(p => ({ id: p.id + 'm', text: p.match, matchId: p.id + 'w' }))]
+  const allCards = [...pairs.map(p => ({ id: p.id + 'w', text: p.word, matchId: p.id + 'm', icon: p.icon })),
+                   ...pairs.map(p => ({ id: p.id + 'm', text: p.match, matchId: p.id + 'w', icon: p.icon }))]
                    .sort(() => Math.random() - 0.5);
 
   const handleCardClick = (card: typeof allCards[0]) => {
     if (matched.includes(card.id) || selected === card.id) return;
     
-    // Speak the word when clicked
     if (!isMuted) {
       speak(card.text);
     }
@@ -378,7 +508,6 @@ function MatchingGame({ onComplete, reviewMode = false }: { onComplete: (score: 
       const prevCard = allCards.find(c => c.id === selected);
       if (prevCard && (prevCard.matchId === card.id || card.matchId === prevCard.id)) {
         setMatched(m => [...m, card.id, selected]);
-        // Play success sound feedback
         if (!isMuted) {
           setTimeout(() => speak('Great match!'), 300);
         }
@@ -399,9 +528,9 @@ function MatchingGame({ onComplete, reviewMode = false }: { onComplete: (score: 
   if (matched.length === allCards.length) {
     return (
       <div className="text-center py-8">
-        <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+        <Mascot emotion="excited" size="lg" className="mx-auto mb-4" />
         <h3 className="text-2xl font-bold text-[#5a3d2a] mb-2">Perfect Match!</h3>
-        <p className="text-[#8b6b5c] mb-4">You matched all the pairs in {moves} moves!</p>
+        <p className="text-[#8b6b5c] mb-4">You matched all pairs in {moves} moves!</p>
         <div className="bg-[#faf6f3] rounded-2xl p-6 mb-4">
           <p className="text-sm text-[#8b6b5c]">Your Score</p>
           <p className="text-4xl font-bold text-[#d4867a]">100%</p>
@@ -412,7 +541,9 @@ function MatchingGame({ onComplete, reviewMode = false }: { onComplete: (score: 
               <RotateCcw className="w-4 h-4 mr-2" /> Play Again
             </Button>
           )}
-          <Button onClick={() => onComplete(100)} className="bg-[#d4867a]">Continue</Button>
+          <Button onClick={() => onComplete(100)} className="bg-[#d4867a]">
+            <CheckCircle className="w-4 h-4 mr-2" /> Continue
+          </Button>
         </div>
       </div>
     );
@@ -421,7 +552,10 @@ function MatchingGame({ onComplete, reviewMode = false }: { onComplete: (score: 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-[#8b6b5c]">Matches: {matched.length / 2} / {pairs.length}</p>
+        <div className="flex items-center gap-2">
+          <Mascot emotion="thinking" size="sm" />
+          <p className="text-sm text-[#8b6b5c]">Matches: {matched.length / 2} / {pairs.length}</p>
+        </div>
         <div className="flex items-center gap-2">
           <button 
             onClick={toggleMute}
@@ -440,7 +574,7 @@ function MatchingGame({ onComplete, reviewMode = false }: { onComplete: (score: 
             key={card.id}
             onClick={() => handleCardClick(card)}
             disabled={matched.includes(card.id)}
-            className={`p-4 rounded-xl text-sm font-medium transition-all ${
+            className={`p-4 rounded-xl text-sm font-medium transition-all flex flex-col items-center gap-2 ${
               matched.includes(card.id) 
                 ? 'bg-green-100 text-green-700 border-2 border-green-300' 
                 : selected === card.id
@@ -448,7 +582,8 @@ function MatchingGame({ onComplete, reviewMode = false }: { onComplete: (score: 
                 : 'bg-white border-2 border-gray-200 text-[#5a3d2a] hover:border-[#d4867a]'
             }`}
           >
-            {card.text}
+            <span className="text-2xl">{card.icon}</span>
+            <span>{card.text}</span>
           </button>
         ))}
       </div>
@@ -469,8 +604,13 @@ function GamePlayer({ game, onClose, onComplete, reviewMode = false }: { game: G
   return (
     <div className="fixed inset-0 bg-[#faf6f3] z-50 flex flex-col">
       <header className="bg-white border-b px-4 py-3 flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={onClose}><ArrowLeft className="w-4 h-4 mr-2" /> {reviewMode ? 'Back to Review' : 'Exit'}</Button>
-        <h1 className="font-medium text-[#5a3d2a]">{reviewMode ? `Review: ${game.title}` : game.title}</h1>
+        <Button variant="outline" size="sm" onClick={onClose}>
+          <ArrowLeft className="w-4 h-4 mr-2" /> {reviewMode ? 'Back' : 'Exit'}
+        </Button>
+        <div className="flex items-center gap-2">
+          <Mascot emotion="study" size="sm" />
+          <h1 className="font-medium text-[#5a3d2a]">{reviewMode ? `Review: ${game.title}` : game.title}</h1>
+        </div>
         <div className="w-20" />
       </header>
       <main className="flex-1 p-4 sm:p-8 max-w-2xl mx-auto w-full">
@@ -478,6 +618,7 @@ function GamePlayer({ game, onClose, onComplete, reviewMode = false }: { game: G
         {game.type === 'matching' && <MatchingGame onComplete={onComplete} reviewMode={reviewMode} />}
         {game.type === 'fill-blank' && (
           <div className="text-center py-12">
+            <Mascot emotion="thinking" size="lg" className="mx-auto mb-4" />
             <p className="text-[#8b6b5c]">Fill in the Blank game coming soon!</p>
           </div>
         )}
@@ -507,32 +648,37 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
     setGoals(prev => prev.map(g => g.id === goal.id ? { ...g, selected: !g.selected } : g));
   };
 
-  // Overview Section - Simple and encouraging
   if (activeSection === 'overview') {
     return (
       <div className="space-y-6">
-        {/* Calm Welcome */}
+        {/* Welcome with Mascot */}
         <div className="bg-white rounded-2xl p-6 text-center">
-          <div className="w-16 h-16 bg-[#faf6f3] rounded-full flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="w-8 h-8 text-[#d4867a]" />
+          <div className="flex justify-center mb-4">
+            <Mascot emotion="happy" size="lg" />
           </div>
           <h3 className="text-xl font-medium text-[#5a3d2a] mb-2">Your Learning Journey</h3>
           <p className="text-[#8b6b5c] text-sm">Take it one step at a time. You're doing great!</p>
         </div>
 
-        {/* Simple Stats */}
+        {/* Simple Stats with Icons */}
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white rounded-2xl p-5 text-center">
+            <div className="w-12 h-12 bg-[#faf6f3] rounded-full flex items-center justify-center mx-auto mb-2">
+              <Star className="w-6 h-6 text-[#d4867a]" />
+            </div>
             <p className="text-3xl font-bold text-[#d4867a]">{completedSkills.length}</p>
             <p className="text-sm text-[#8b6b5c] mt-1">Skills Learned</p>
           </div>
           <div className="bg-white rounded-2xl p-5 text-center">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+              <Trophy className="w-6 h-6 text-green-600" />
+            </div>
             <p className="text-3xl font-bold text-green-600">{masteredTopics.length}</p>
             <p className="text-sm text-[#8b6b5c] mt-1">Topics Mastered</p>
           </div>
         </div>
 
-        {/* Navigation Cards */}
+        {/* Navigation Cards with Icons */}
         <div className="space-y-3">
           <button 
             onClick={() => setActiveSection('skills')}
@@ -584,15 +730,11 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
         </div>
 
         {/* Encouragement */}
-        <div className="bg-gradient-to-r from-[#d4867a]/10 to-[#fcc4be]/10 rounded-2xl p-5 text-center">
-          <p className="text-[#5a3d2a] font-medium">"Every expert was once a beginner."</p>
-          <p className="text-sm text-[#8b6b5c] mt-1">Keep going, {student.name.split(' ')[0]}!</p>
-        </div>
+        <EncouragementBanner />
       </div>
     );
   }
 
-  // Skills Section
   if (activeSection === 'skills') {
     return (
       <div className="space-y-4">
@@ -603,10 +745,14 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
           <ArrowLeft className="w-5 h-5" /> Back
         </button>
 
-        <h3 className="text-lg font-medium text-[#5a3d2a]">Skills Ready to Practice</h3>
+        <div className="flex items-center gap-3">
+          <Mascot emotion="thinking" size="md" />
+          <h3 className="text-lg font-medium text-[#5a3d2a]">Skills Ready to Practice</h3>
+        </div>
         
         {readySkills.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center">
+            <Mascot emotion="happy" size="lg" className="mx-auto mb-4" />
             <p className="text-[#8b6b5c]">Complete more lessons to unlock new skills!</p>
           </div>
         ) : (
@@ -629,7 +775,10 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
 
         {completedSkills.length > 0 && (
           <>
-            <h3 className="text-lg font-medium text-[#5a3d2a] mt-6">Skills You've Mastered</h3>
+            <div className="flex items-center gap-3 mt-6">
+              <Mascot emotion="proud" size="md" />
+              <h3 className="text-lg font-medium text-[#5a3d2a]">Skills You've Mastered</h3>
+            </div>
             <div className="space-y-3">
               {completedSkills.map(skill => (
                 <div key={skill.id} className="bg-green-50 rounded-2xl p-5 border border-green-200">
@@ -646,7 +795,6 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
     );
   }
 
-  // Topics Section
   if (activeSection === 'topics') {
     return (
       <div className="space-y-4">
@@ -657,9 +805,11 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
           <ArrowLeft className="w-5 h-5" /> Back
         </button>
 
-        <h3 className="text-lg font-medium text-[#5a3d2a]">Your Topics</h3>
+        <div className="flex items-center gap-3">
+          <Mascot emotion="study" size="md" />
+          <h3 className="text-lg font-medium text-[#5a3d2a]">Your Topics</h3>
+        </div>
 
-        {/* Simple Progress Bar */}
         <div className="bg-white rounded-2xl p-5">
           <p className="text-sm text-[#8b6b5c] mb-3">Overall Progress</p>
           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
@@ -673,11 +823,12 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
           </p>
         </div>
 
-        {/* Topic List */}
         <div className="space-y-2">
           {masteredTopics.length > 0 && (
             <div className="bg-green-50 rounded-2xl p-4">
-              <p className="text-sm font-medium text-green-700 mb-2">Mastered</p>
+              <p className="text-sm font-medium text-green-700 mb-2 flex items-center gap-2">
+                <Trophy className="w-4 h-4" /> Mastered
+              </p>
               <div className="flex flex-wrap gap-2">
                 {masteredTopics.map(t => (
                   <span key={t.topic} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
@@ -690,7 +841,9 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
 
           {strongTopics.length > 0 && (
             <div className="bg-blue-50 rounded-2xl p-4">
-              <p className="text-sm font-medium text-blue-700 mb-2">Strong</p>
+              <p className="text-sm font-medium text-blue-700 mb-2 flex items-center gap-2">
+                <Star className="w-4 h-4" /> Strong
+              </p>
               <div className="flex flex-wrap gap-2">
                 {strongTopics.map(t => (
                   <span key={t.topic} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
@@ -703,7 +856,9 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
 
           {[...familiarTopics, ...learningTopics].length > 0 && (
             <div className="bg-orange-50 rounded-2xl p-4">
-              <p className="text-sm font-medium text-orange-700 mb-2">Learning</p>
+              <p className="text-sm font-medium text-orange-700 mb-2 flex items-center gap-2">
+                <BookOpen className="w-4 h-4" /> Learning
+              </p>
               <div className="flex flex-wrap gap-2">
                 {[...familiarTopics, ...learningTopics].map(t => (
                   <span key={t.topic} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
@@ -718,7 +873,6 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
     );
   }
 
-  // Goals Section
   if (activeSection === 'goals') {
     return (
       <div className="space-y-4">
@@ -729,9 +883,12 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
           <ArrowLeft className="w-5 h-5" /> Back
         </button>
 
-        <div className="bg-white rounded-2xl p-5">
-          <h3 className="text-lg font-medium text-[#5a3d2a] mb-2">Your Goals</h3>
-          <p className="text-sm text-[#8b6b5c]">Pick goals that excite you. We'll help you get there!</p>
+        <div className="flex items-center gap-3">
+          <Mascot emotion="excited" size="md" />
+          <div>
+            <h3 className="text-lg font-medium text-[#5a3d2a]">Your Goals</h3>
+            <p className="text-sm text-[#8b6b5c]">Pick goals that excite you!</p>
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -762,6 +919,7 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
 
         {selectedGoalsCount > 0 && (
           <div className="bg-[#faf6f3] rounded-2xl p-5 text-center">
+            <Mascot emotion="cheer" size="md" className="mx-auto mb-2" />
             <p className="text-[#5a3d2a] font-medium">{selectedGoalsCount} goal{selectedGoalsCount > 1 ? 's' : ''} selected!</p>
             <p className="text-sm text-[#8b6b5c] mt-1">You're on your way!</p>
           </div>
@@ -803,24 +961,19 @@ function StudentDashboard({ student }: { student: StudentData }) {
     setReviewingGame(null);
   };
 
-  // Find game by assignment title
   const findGameByTitle = (title: string): GameActivity | null => {
-    // Try exact match first
     let game = student.games.find(g => g.title === title);
     if (game) return game;
     
-    // Try partial match
     game = student.games.find(g => 
       title.toLowerCase().includes(g.title.toLowerCase()) ||
       g.title.toLowerCase().includes(title.toLowerCase())
     );
     if (game) return game;
     
-    // Return first game as fallback for demo
     return student.games[0] || null;
   };
 
-  // Handle start assignment
   const handleStartAssignment = (assignment: StudentAssignment) => {
     if (assignment.type === 'game') {
       const game = findGameByTitle(assignment.title);
@@ -832,7 +985,6 @@ function StudentDashboard({ student }: { student: StudentData }) {
     }
   };
 
-  // Handle review completed assignment
   const handleReviewAssignment = (assignment: StudentAssignment) => {
     const game = findGameByTitle(assignment.title);
     if (game) {
@@ -850,14 +1002,12 @@ function StudentDashboard({ student }: { student: StudentData }) {
 
   return (
     <div className="min-h-screen bg-[#faf6f3]">
-      {/* Header - Single Logo */}
+      {/* Header */}
       <header className="bg-[#fcc4be] sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-[#d4867a]" />
-              </div>
+              <Mascot emotion="happy" size="sm" />
               <span className="font-serif text-[#5a3d2a] text-lg hidden sm:block">Roam Learning</span>
             </div>
             <div className="flex items-center gap-4">
@@ -909,9 +1059,12 @@ function StudentDashboard({ student }: { student: StudentData }) {
             {/* Welcome & Stats */}
             <div className="bg-white rounded-2xl p-6">
               <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-bold text-[#5a3d2a]">Hello, {student.name.split(' ')[0]}!</h2>
-                  <p className="text-[#8b6b5c]">Keep up the great work!</p>
+                <div className="flex items-center gap-3">
+                  <Mascot emotion="happy" size="md" />
+                  <div>
+                    <h2 className="text-xl font-bold text-[#5a3d2a]">Hello, {student.name.split(' ')[0]}!</h2>
+                    <p className="text-[#8b6b5c]">Keep up the great work!</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 bg-orange-100 px-4 py-2 rounded-full">
                   <Flame className="w-5 h-5 text-orange-500" />
@@ -936,6 +1089,9 @@ function StudentDashboard({ student }: { student: StudentData }) {
                 </div>
               </div>
             </div>
+
+            {/* Encouragement Banner */}
+            <EncouragementBanner />
 
             {/* New Assignments */}
             {newAssignments.length > 0 && (
@@ -968,10 +1124,12 @@ function StudentDashboard({ student }: { student: StudentData }) {
 
             {/* Pending Assignments */}
             <div className="bg-white rounded-2xl p-5">
-              <h3 className="font-medium text-[#5a3d2a] mb-3">Pending Assignments</h3>
+              <h3 className="font-medium text-[#5a3d2a] mb-3 flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-[#d4867a]" /> Pending Assignments
+              </h3>
               {pendingAssignments.length === 0 ? (
                 <div className="text-center py-8">
-                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                  <Mascot emotion="proud" size="lg" className="mx-auto mb-3" />
                   <p className="text-[#5a3d2a] font-medium">All caught up!</p>
                   <p className="text-sm text-[#8b6b5c]">You have no pending assignments.</p>
                 </div>
@@ -1008,7 +1166,10 @@ function StudentDashboard({ student }: { student: StudentData }) {
         {(activeTab === 'assignments' || activeTab === 'work') && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-5">
-              <h2 className="text-lg font-medium text-[#5a3d2a] mb-4">My Assignments</h2>
+              <div className="flex items-center gap-3 mb-4">
+                <Mascot emotion="study" size="md" />
+                <h2 className="text-lg font-medium text-[#5a3d2a]">My Assignments</h2>
+              </div>
               <Tabs defaultValue="pending">
                 <TabsList className="mb-4">
                   <TabsTrigger value="pending">To Do ({pendingAssignments.length})</TabsTrigger>
@@ -1084,7 +1245,10 @@ function StudentDashboard({ student }: { student: StudentData }) {
         {activeTab === 'games' && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-5">
-              <h2 className="text-lg font-medium text-[#5a3d2a] mb-4">Learning Games</h2>
+              <div className="flex items-center gap-3 mb-4">
+                <Mascot emotion="excited" size="md" />
+                <h2 className="text-lg font-medium text-[#5a3d2a]">Learning Games</h2>
+              </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 {student.games.map(game => (
                   <div key={game.id} className="p-5 bg-[#faf6f3] rounded-2xl border-2 border-transparent hover:border-[#d4867a] transition-colors cursor-pointer" onClick={() => setPlayingGame(game)}>
