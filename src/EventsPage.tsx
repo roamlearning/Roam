@@ -1,7 +1,5 @@
-// Events Page - Updated with calendar and filters
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { MapPin } from 'lucide-react';
+import { MapPin, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Events Data
@@ -190,9 +188,55 @@ const eventsData = [
   }
 ];
 
+// Fee Warning Dialog Component
+function FeeWarningDialog({ isOpen, onClose, onAgree, eventTitle }: { isOpen: boolean; onClose: () => void; onAgree: () => void; eventTitle: string }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-3xl p-8 max-w-lg w-full">
+        <div className="text-center">
+          <div className="text-5xl mb-4">💰</div>
+          <h2 className="text-2xl font-serif text-[#5a3d2a] mb-4">Please Read Before Booking</h2>
+          <p className="text-[#8b6b5c] mb-4">
+            <strong>{eventTitle}</strong> has the following fee structure:
+          </p>
+          <div className="bg-[#f5ebe5] rounded-xl p-4 mb-6 text-left">
+            <ul className="space-y-2 text-[#5a3d2a]">
+              <li>• <strong>Roam Session Fee:</strong> Paid to your teacher</li>
+              <li>• <strong>Venue Fee:</strong> May apply (check event details)</li>
+              <li>• <strong>On-site Purchases:</strong> Coffee, lunch, tickets, etc.</li>
+            </ul>
+          </div>
+          <p className="text-[#8b6b5c] mb-6 text-sm">
+            This allows us to be transparent about our fees while still compensating the teacher. 
+            The teacher will be available to assist with completing transactions upon request.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-3 rounded-full border border-[#d4867a] text-[#d4867a] hover:bg-[#f5ebe5] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onAgree}
+              className="px-6 py-3 rounded-full bg-[#d4867a] text-white hover:bg-[#c2756a] transition-colors"
+            >
+              I Understand, Continue to Book
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EventsPage() {
   const [calendarFilter, setCalendarFilter] = useState<string>('all');
   const [listFilter, setListFilter] = useState<string>('all');
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<typeof eventsData[0] | null>(null);
 
   const levelFilters = [
     { id: 'all', label: 'All Levels' },
@@ -235,6 +279,18 @@ export default function EventsPage() {
     return calendarEvents.find(e => e.day === day);
   };
 
+  const handleBookClick = (event: typeof eventsData[0]) => {
+    setSelectedEvent(event);
+    setWarningOpen(true);
+  };
+
+  const handleAgree = () => {
+    setWarningOpen(false);
+    if (selectedEvent?.stripeLink) {
+      window.open(selectedEvent.stripeLink, '_blank');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#faf6f3] py-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -250,7 +306,7 @@ export default function EventsPage() {
           </p>
         </div>
 
-        {/* Calendar Section */}
+        {/* ===== CALENDAR SECTION ===== */}
         <div className="bg-white rounded-3xl p-6 mb-10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
             <h2 className="text-xl font-medium text-[#5a3d2a]">May 2025 Calendar</h2>
@@ -324,28 +380,70 @@ export default function EventsPage() {
           </div>
         </div>
 
-        {/* How it works & Pricing info cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-10">
-          <div className="bg-white rounded-3xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">📋</span>
-              <h3 className="text-lg font-medium text-[#5a3d2a]">How it works</h3>
+        {/* ===== HOW IT WORKS SECTION ===== */}
+        <div className="bg-white rounded-3xl p-8 mb-10">
+          <h2 className="text-2xl font-serif text-[#5a3d2a] mb-6 text-center">How Events Work</h2>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Step 1 */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4867a]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">📋</span>
+              </div>
+              <h3 className="font-medium text-[#5a3d2a] mb-2">1. Grammar Review</h3>
+              <p className="text-sm text-[#8b6b5c]">
+                First 10 minutes: targeted grammar review relevant to the day's setting
+              </p>
             </div>
-            <p className="text-[#8b6b5c]">
-              10 minutes of grammar review relevant to the setting, then relaxed conversation, 
-              vocabulary building, and real-world practice.
-            </p>
-          </div>
-          <div className="bg-white rounded-3xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">💰</span>
-              <h3 className="text-lg font-medium text-[#5a3d2a]">Pricing</h3>
+
+            {/* Step 2 */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4867a]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🗣️</span>
+              </div>
+              <h3 className="font-medium text-[#5a3d2a] mb-2">2. Real Conversation</h3>
+              <p className="text-sm text-[#8b6b5c]">
+                Relaxed conversation, vocabulary building, and real-world practice in authentic settings
+              </p>
             </div>
-            <p className="text-[#8b6b5c]">
-              Each outing has a session fee paid to Roam Learning plus whatever you choose to 
-              spend at the venue. See individual events for estimated total costs.
-            </p>
+
+            {/* Step 3 */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#d4867a]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">💰</span>
+              </div>
+              <h3 className="font-medium text-[#5a3d2a] mb-2">3. Transparent Pricing</h3>
+              <p className="text-sm text-[#8b6b5c]">
+                Session fee to Roam + whatever you choose to spend at the venue. No hidden costs.
+              </p>
+            </div>
           </div>
+
+          {/* What's Included */}
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <h4 className="text-sm font-medium text-[#5a3d2a] mb-4 text-center">What's Included</h4>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {[
+                'Pre-event grammar worksheet',
+                'Guided conversation practice',
+                'Vocabulary building exercises',
+                'Teacher support throughout',
+                'Post-event review materials',
+                'Small group setting (max 8)'
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-[#8b6b5c]">
+                  <Check className="h-4 w-4 text-[#d4867a]" />
+                  <span className="text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ===== SORTABLE EVENTS LIST ===== */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-medium text-[#5a3d2a]">Upcoming Events</h2>
+          <span className="text-sm text-[#8b6b5c]">{filteredEvents.length} events</span>
         </div>
 
         {/* List Filter buttons */}
@@ -465,29 +563,46 @@ export default function EventsPage() {
                 </div>
 
                 {/* Book Button */}
-                <a href={event.stripeLink} target="_blank" rel="noopener noreferrer">
-                  <Button className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full w-full sm:w-auto">
-                    Book This Event →
-                  </Button>
-                </a>
+                <Button 
+                  onClick={() => handleBookClick(event)}
+                  className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full w-full sm:w-auto"
+                >
+                  Book This Event →
+                </Button>
               </div>
             </div>
           ))}
         </div>
 
+        {/* Empty state */}
+        {filteredEvents.length === 0 && (
+          <div className="text-center py-12 bg-white rounded-3xl">
+            <p className="text-[#8b6b5c]">No events match your filter. Try selecting a different option.</p>
+          </div>
+        )}
+
         {/* RSVP CTA */}
         <div className="mt-12 bg-[#f5ebe5] rounded-3xl p-8 text-center">
-          <h2 className="text-2xl font-serif text-[#5a3d2a] mb-4">Want to join an event?</h2>
+          <h2 className="text-2xl font-serif text-[#5a3d2a] mb-4">Questions about events?</h2>
           <p className="text-[#8b6b5c] mb-6">
-            RSVP through the booking form. Spots are capped to keep the group small and the conversation natural.
+            Spots are capped to keep the group small and the conversation natural. 
+            Book early to secure your spot!
           </p>
-          <Link to="/event-booking">
+          <a href="mailto:help@roamlearning.org">
             <Button className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full px-8 py-6 text-lg">
-              Book an Event →
+              Contact Us →
             </Button>
-          </Link>
+          </a>
         </div>
       </div>
+
+      {/* Fee Warning Dialog */}
+      <FeeWarningDialog 
+        isOpen={warningOpen} 
+        onClose={() => setWarningOpen(false)} 
+        onAgree={handleAgree}
+        eventTitle={selectedEvent?.title || ''}
+      />
     </div>
   );
 }
