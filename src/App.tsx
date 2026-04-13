@@ -4,6 +4,7 @@ import { Menu, X, Globe, Check, Clock, Users, Calendar, Sparkles, Lock, MessageC
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import './App.css';
+import EventsPage from './EventsPage';
 
 // Navigation Component - Logo banner style
 function Navigation() {
@@ -1550,6 +1551,7 @@ const eventsData = [
   {
     id: 1,
     date: 'MON MAY 5',
+    day: 5,
     time: '10:00 AM',
     category: 'FREE VENUE',
     level: 'A1–A2',
@@ -1578,6 +1580,7 @@ const eventsData = [
   {
     id: 2,
     date: 'TUE MAY 6',
+    day: 6,
     time: '10:30 AM',
     category: 'FREE ENTRY',
     level: 'B1–B2',
@@ -1606,6 +1609,7 @@ const eventsData = [
   {
     id: 3,
     date: 'WED MAY 7',
+    day: 7,
     time: '11:00 AM',
     category: '$6 WITH OHIO ID',
     level: 'All Levels',
@@ -1633,6 +1637,7 @@ const eventsData = [
   {
     id: 4,
     date: 'MON MAY 12',
+    day: 12,
     time: '10:00 AM',
     category: 'DINING',
     level: 'A1–A2',
@@ -1661,6 +1666,7 @@ const eventsData = [
   {
     id: 5,
     date: 'TUE MAY 13',
+    day: 13,
     time: '10:00 AM',
     category: 'FREE ENTRY',
     level: 'B2',
@@ -1688,6 +1694,7 @@ const eventsData = [
   {
     id: 6,
     date: 'WED MAY 14',
+    day: 14,
     time: '12:00 PM',
     category: 'DINING',
     level: 'B1–B2',
@@ -1716,6 +1723,7 @@ const eventsData = [
   {
     id: 7,
     date: 'WED MAY 21',
+    day: 21,
     time: '12:30 PM',
     category: 'DINING',
     level: 'C1',
@@ -1741,205 +1749,6 @@ const eventsData = [
     stripeLink: 'https://buy.stripe.com/dRm28r1PR3RZ8hE4GRc3m0c'
   }
 ];
-
-// Events Page
-function EventsPage() {
-  const [filter, setFilter] = useState<string>('all');
-
-  const filters = [
-    { id: 'all', label: 'All events' },
-    { id: 'free', label: '💚 Under $20' },
-    { id: 'dining', label: '🍴 Dining' },
-    { id: 'A1-A2', label: 'Beginner (A1–A2)' },
-    { id: 'B1-B2', label: 'Intermediate (B1–B2)' },
-    { id: 'C1', label: 'Advanced / Business' },
-  ];
-
-  const filteredEvents = eventsData.filter(event => {
-    if (filter === 'all') return true;
-    if (filter === 'free') return event.entryFeeOhio === 0 && event.entryFeeNonOhio === 0;
-    if (filter === 'dining') return event.category === 'DINING';
-    if (filter === 'A1-A2') return event.level === 'A1–A2';
-    if (filter === 'B1-B2') return event.level === 'B1–B2';
-    if (filter === 'C1') return event.level === 'C1';
-    return true;
-  });
-
-  return (
-    <div className="min-h-screen bg-[#faf6f3] py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <span className="inline-block bg-white rounded-full px-4 py-2 text-sm text-[#d4867a] mb-4 border border-[#d4867a]/20">
-            UPCOMING EVENTS
-          </span>
-          <h1 className="text-4xl sm:text-5xl font-serif text-[#5a3d2a] mb-4">Field trips and events</h1>
-          <p className="text-[#8b6b5c] max-w-2xl mx-auto">
-            One optional outing per group per month, Monday through Wednesday. 
-            First 10 minutes: grammar review. The rest: real English in the real world.
-          </p>
-        </div>
-
-        {/* How it works & Pricing info cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-10">
-          <div className="bg-white rounded-3xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">📋</span>
-              <h3 className="text-lg font-medium text-[#5a3d2a]">How it works</h3>
-            </div>
-            <p className="text-[#8b6b5c]">
-              10 minutes of grammar review relevant to the setting, then relaxed conversation, 
-              vocabulary building, and real-world practice.
-            </p>
-          </div>
-          <div className="bg-white rounded-3xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">💰</span>
-              <h3 className="text-lg font-medium text-[#5a3d2a]">Pricing</h3>
-            </div>
-            <p className="text-[#8b6b5c]">
-              Each outing has a session fee paid to Roam Learning plus whatever you choose to 
-              spend at the venue. See individual events for estimated total costs.
-            </p>
-          </div>
-        </div>
-
-        {/* Filter buttons */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          {filters.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setFilter(f.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                filter === f.id
-                  ? 'bg-[#d4867a] text-white'
-                  : 'bg-white text-[#5a3d2a] hover:bg-[#f5ebe5] border border-gray-200'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Events list */}
-        <div className="space-y-6">
-          {filteredEvents.map((event) => (
-            <div key={event.id} className="bg-white rounded-3xl overflow-hidden">
-              {/* Event header */}
-              <div className={`${event.color} text-white p-6 relative`}>
-                {/* Price badge in top right */}
-                <div className="absolute top-4 right-4 bg-white/90 text-[#5a3d2a] px-3 py-1.5 rounded-full text-sm font-bold">
-                  {event.category === 'DINING' ? `$${event.roamFee} + Lunch` : `$${event.roamFee}`}
-                </div>
-                <div className="text-sm opacity-90 mb-2 pr-16">
-                  {event.date} · {event.time} · {event.category}
-                </div>
-                <h2 className="text-2xl font-bold mb-4">
-                  {event.levelLabel} ({event.level}) — {event.title}
-                </h2>
-                <div className="flex flex-wrap gap-2">
-                  {/* Venue entry tag */}
-                  {event.entryFeeOhio === 0 && event.entryFeeNonOhio === 0 && (
-                    <span className="bg-white/30 px-3 py-1 rounded-full text-sm">
-                      {event.category === 'DINING' ? 'Free Entry' : 'Free Venue'}
-                    </span>
-                  )}
-                  {/* Level tag */}
-                  <span className="bg-white/30 px-3 py-1 rounded-full text-sm">
-                    {event.level}
-                  </span>
-                </div>
-              </div>
-
-              {/* Event details */}
-              <div className="p-6 space-y-6">
-                {/* Location */}
-                <div>
-                  <div className="flex items-center gap-2 text-[#d4867a] mb-2">
-                    <MapPin className="h-5 w-5" />
-                    <span className="text-sm font-medium uppercase tracking-wide">Location</span>
-                  </div>
-                  <a 
-                    href={event.venueUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-[#5a3d2a] font-medium hover:text-[#d4867a] transition-colors"
-                  >
-                    {event.venue}
-                  </a>
-                  <p className="text-[#8b6b5c]">{event.address}</p>
-                </div>
-
-                {/* Grammar Focus */}
-                <div>
-                  <div className="flex items-center gap-2 text-[#d4867a] mb-2">
-                    <span className="text-xl">🔤</span>
-                    <span className="text-sm font-medium uppercase tracking-wide">Grammar Focus</span>
-                  </div>
-                  <div className="space-y-1">
-                    {Object.entries(event.grammarFocus).map(([level, grammar]) => (
-                      <p key={level} className="text-[#5a3d2a]">
-                        <span className="font-bold">{level}:</span> {grammar}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Vocabulary */}
-                <div>
-                  <div className="flex items-center gap-2 text-[#d4867a] mb-2">
-                    <span className="text-xl">📚</span>
-                    <span className="text-sm font-medium uppercase tracking-wide">Vocabulary</span>
-                  </div>
-                  <p className="text-[#5a3d2a]">{event.vocabulary}</p>
-                </div>
-
-                {/* Costs */}
-                <div>
-                  <div className="flex items-center gap-2 text-[#d4867a] mb-2">
-                    <span className="text-xl">💰</span>
-                    <span className="text-sm font-medium uppercase tracking-wide">Costs</span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[#5a3d2a] font-medium">
-                      {event.title} — {event.duration} hours — {event.costDisplay}
-                    </p>
-                    <p className="text-[#8b6b5c] text-sm">
-                      {event.costBreakdown}
-                    </p>
-                    {event.menuUrl && (
-                      <a 
-                        href={event.menuUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#d4867a] underline text-sm inline-block mt-1"
-                      >
-                        View menu →
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* RSVP CTA */}
-        <div className="mt-12 bg-[#f5ebe5] rounded-3xl p-8 text-center">
-          <h2 className="text-2xl font-serif text-[#5a3d2a] mb-4">Want to join an event?</h2>
-          <p className="text-[#8b6b5c] mb-6">
-            RSVP through the booking form. Spots are capped to keep the group small and the conversation natural.
-          </p>
-          <Link to="/event-booking">
-            <Button className="bg-[#d4867a] hover:bg-[#c2756a] text-white rounded-full px-8 py-6 text-lg">
-              Book an Event →
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Fee Warning Dialog Component
 function FeeWarningDialog({ isOpen, onClose, onAgree, eventTitle }: { isOpen: boolean; onClose: () => void; onAgree: () => void; eventTitle: string }) {
