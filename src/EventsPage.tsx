@@ -1,3 +1,4 @@
+// Events Page - Updated with calendar and filters
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
