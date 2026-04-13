@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { 
   BookOpen, Gamepad2, CheckCircle, Clock, 
   Trophy, Flame, Calendar, Bell,
@@ -6,9 +6,9 @@ import {
   ArrowLeft, Volume2,
   User,
   Home, ClipboardList,
-  TrendingUp, Target, Award,
-  Sparkles, Zap, Lightbulb,
-  Lock
+  TrendingUp, Target,
+  Sparkles, Zap,
+  RotateCcw, ChevronLeft, VolumeX
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,46 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+// ==================== TEXT-TO-SPEECH HOOK ====================
+function useTextToSpeech() {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  const speak = useCallback((text: string) => {
+    if (isMuted || !window.speechSynthesis) return;
+    
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
+    window.speechSynthesis.speak(utterance);
+  }, [isMuted]);
+
+  const stop = useCallback(() => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted(prev => {
+      if (!prev) stop();
+      return !prev;
+    });
+  }, [stop]);
+
+  return { speak, stop, isSpeaking, isMuted, toggleMute };
+}
 
 // ==================== TYPES ====================
 interface StudentAssignment {
@@ -195,18 +235,19 @@ function StudentLogin({ onLogin }: { onLogin: () => void }) {
 }
 
 // ==================== FLASHCARD GAME ====================
-function FlashcardGame({ onComplete }: { onComplete: (score: number) => void }) {
+function FlashcardGame({ onComplete, reviewMode = false }: { onComplete: (score: number) => void; reviewMode?: boolean }) {
   const [currentCard, setCurrentCard] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const { speak, isSpeaking, isMuted, toggleMute } = useTextToSpeech();
 
   const cards = [
-    { front: 'A', back: '/eɪ/ as in "apple"', example: 'Apple, Ant, Arrow' },
-    { front: 'B', back: '/biː/ as in "ball"', example: 'Ball, Book, Bird' },
-    { front: 'C', back: '/siː/ as in "cat"', example: 'Cat, Car, Cup' },
-    { front: 'D', back: '/diː/ as in "dog"', example: 'Dog, Door, Desk' },
-    { front: 'E', back: '/iː/ as in "egg"', example: 'Egg, Elephant, Eagle' },
+    { front: 'A', back: '/eɪ/ as in "apple"', example: 'Apple, Ant, Arrow', audioText: 'A. Apple. Ant. Arrow.' },
+    { front: 'B', back: '/biː/ as in "ball"', example: 'Ball, Book, Bird', audioText: 'B. Ball. Book. Bird.' },
+    { front: 'C', back: '/siː/ as in "cat"', example: 'Cat, Car, Cup', audioText: 'C. Cat. Car. Cup.' },
+    { front: 'D', back: '/diː/ as in "dog"', example: 'Dog, Door, Desk', audioText: 'D. Dog. Door. Desk.' },
+    { front: 'E', back: '/iː/ as in "egg"', example: 'Egg, Elephant, Eagle', audioText: 'E. Egg. Elephant. Eagle.' },
   ];
 
   const handleNext = () => {
@@ -220,12 +261,25 @@ function FlashcardGame({ onComplete }: { onComplete: (score: number) => void }) 
     }
   };
 
+  const handlePrevious = () => {
+    if (currentCard > 0) {
+      setCurrentCard(c => c - 1);
+      setFlipped(false);
+    }
+  };
+
+  const handleListen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const card = cards[currentCard];
+    speak(card.audioText);
+  };
+
   if (completed) {
     return (
       <div className="text-center py-8">
         <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-        <h3 className="text-2xl font-bold text-[#5a3d2a] mb-2">Great Job!</h3>
-        <p className="text-[#8b6b5c] mb-4">You completed the flashcards!</p>
+        <h3 className="text-2xl font-bold text-[#5a3d2a] mb-2">{reviewMode ? 'Review Complete!' : 'Great Job!'}</h3>
+        <p className="text-[#8b6b5c] mb-4">{reviewMode ? 'You reviewed all the flashcards!' : 'You completed the flashcards!'}</p>
         <div className="bg-[#faf6f3] rounded-2xl p-6 mb-4">
           <p className="text-sm text-[#8b6b5c]">Your Score</p>
           <p className="text-4xl font-bold text-[#d4867a]">{score + 20}%</p>
@@ -239,7 +293,16 @@ function FlashcardGame({ onComplete }: { onComplete: (score: number) => void }) 
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-[#8b6b5c]">Card {currentCard + 1} of {cards.length}</p>
-        <Progress value={((currentCard + 1) / cards.length) * 100} className="w-32 h-2" />
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={toggleMute}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            title={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? <VolumeX className="w-5 h-5 text-[#8b6b5c]" /> : <Volume2 className="w-5 h-5 text-[#d4867a]" />}
+          </button>
+          <Progress value={((currentCard + 1) / cards.length) * 100} className="w-32 h-2" />
+        </div>
       </div>
 
       <div 
@@ -260,9 +323,22 @@ function FlashcardGame({ onComplete }: { onComplete: (score: number) => void }) 
         </div>
       </div>
 
-      <div className="flex justify-center gap-2">
-        <Button variant="outline" onClick={() => setFlipped(!flipped)} className="rounded-full">
-          <Volume2 className="w-4 h-4 mr-2" /> Listen
+      <div className="flex justify-center gap-3">
+        <Button 
+          variant="outline" 
+          onClick={handlePrevious} 
+          disabled={currentCard === 0}
+          className="rounded-full"
+        >
+          <ChevronLeft className="w-4 h-4 mr-2" /> Back
+        </Button>
+        <Button 
+          variant="outline" 
+          onClick={handleListen} 
+          disabled={isSpeaking || isMuted}
+          className="rounded-full"
+        >
+          <Volume2 className="w-4 h-4 mr-2" /> {isSpeaking ? 'Playing...' : 'Listen'}
         </Button>
       </div>
     </div>
@@ -270,9 +346,11 @@ function FlashcardGame({ onComplete }: { onComplete: (score: number) => void }) 
 }
 
 // ==================== MATCHING GAME ====================
-function MatchingGame({ onComplete }: { onComplete: (score: number) => void }) {
+function MatchingGame({ onComplete, reviewMode = false }: { onComplete: (score: number) => void; reviewMode?: boolean }) {
   const [matched, setMatched] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [moves, setMoves] = useState(0);
+  const { speak, isMuted, toggleMute } = useTextToSpeech();
 
   const pairs = [
     { id: '1', word: 'Mother', match: 'Mom' },
@@ -288,12 +366,22 @@ function MatchingGame({ onComplete }: { onComplete: (score: number) => void }) {
   const handleCardClick = (card: typeof allCards[0]) => {
     if (matched.includes(card.id) || selected === card.id) return;
     
+    // Speak the word when clicked
+    if (!isMuted) {
+      speak(card.text);
+    }
+    
     if (!selected) {
       setSelected(card.id);
     } else {
+      setMoves(m => m + 1);
       const prevCard = allCards.find(c => c.id === selected);
       if (prevCard && (prevCard.matchId === card.id || card.matchId === prevCard.id)) {
         setMatched(m => [...m, card.id, selected]);
+        // Play success sound feedback
+        if (!isMuted) {
+          setTimeout(() => speak('Great match!'), 300);
+        }
         if (matched.length + 2 === allCards.length) {
           setTimeout(() => onComplete(100), 500);
         }
@@ -302,17 +390,30 @@ function MatchingGame({ onComplete }: { onComplete: (score: number) => void }) {
     }
   };
 
+  const handleReset = () => {
+    setMatched([]);
+    setSelected(null);
+    setMoves(0);
+  };
+
   if (matched.length === allCards.length) {
     return (
       <div className="text-center py-8">
         <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
         <h3 className="text-2xl font-bold text-[#5a3d2a] mb-2">Perfect Match!</h3>
-        <p className="text-[#8b6b5c] mb-4">You matched all the pairs!</p>
+        <p className="text-[#8b6b5c] mb-4">You matched all the pairs in {moves} moves!</p>
         <div className="bg-[#faf6f3] rounded-2xl p-6 mb-4">
           <p className="text-sm text-[#8b6b5c]">Your Score</p>
           <p className="text-4xl font-bold text-[#d4867a]">100%</p>
         </div>
-        <Button onClick={() => onComplete(100)} className="bg-[#d4867a]">Continue</Button>
+        <div className="flex justify-center gap-3">
+          {reviewMode && (
+            <Button onClick={handleReset} variant="outline" className="rounded-full">
+              <RotateCcw className="w-4 h-4 mr-2" /> Play Again
+            </Button>
+          )}
+          <Button onClick={() => onComplete(100)} className="bg-[#d4867a]">Continue</Button>
+        </div>
       </div>
     );
   }
@@ -321,7 +422,16 @@ function MatchingGame({ onComplete }: { onComplete: (score: number) => void }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-[#8b6b5c]">Matches: {matched.length / 2} / {pairs.length}</p>
-        <Progress value={(matched.length / allCards.length) * 100} className="w-32 h-2" />
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={toggleMute}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            title={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? <VolumeX className="w-5 h-5 text-[#8b6b5c]" /> : <Volume2 className="w-5 h-5 text-[#d4867a]" />}
+          </button>
+          <Progress value={(matched.length / allCards.length) * 100} className="w-32 h-2" />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -342,22 +452,30 @@ function MatchingGame({ onComplete }: { onComplete: (score: number) => void }) {
           </button>
         ))}
       </div>
+
+      {reviewMode && (
+        <div className="flex justify-center">
+          <Button onClick={handleReset} variant="outline" className="rounded-full">
+            <RotateCcw className="w-4 h-4 mr-2" /> Reset Game
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
 
 // ==================== GAME PLAYER ====================
-function GamePlayer({ game, onClose, onComplete }: { game: GameActivity; onClose: () => void; onComplete: (score: number) => void }) {
+function GamePlayer({ game, onClose, onComplete, reviewMode = false }: { game: GameActivity; onClose: () => void; onComplete: (score: number) => void; reviewMode?: boolean }) {
   return (
     <div className="fixed inset-0 bg-[#faf6f3] z-50 flex flex-col">
       <header className="bg-white border-b px-4 py-3 flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={onClose}><ArrowLeft className="w-4 h-4 mr-2" /> Exit</Button>
-        <h1 className="font-medium text-[#5a3d2a]">{game.title}</h1>
+        <Button variant="outline" size="sm" onClick={onClose}><ArrowLeft className="w-4 h-4 mr-2" /> {reviewMode ? 'Back to Review' : 'Exit'}</Button>
+        <h1 className="font-medium text-[#5a3d2a]">{reviewMode ? `Review: ${game.title}` : game.title}</h1>
         <div className="w-20" />
       </header>
       <main className="flex-1 p-4 sm:p-8 max-w-2xl mx-auto w-full">
-        {game.type === 'flashcards' && <FlashcardGame onComplete={onComplete} />}
-        {game.type === 'matching' && <MatchingGame onComplete={onComplete} />}
+        {game.type === 'flashcards' && <FlashcardGame onComplete={onComplete} reviewMode={reviewMode} />}
+        {game.type === 'matching' && <MatchingGame onComplete={onComplete} reviewMode={reviewMode} />}
         {game.type === 'fill-blank' && (
           <div className="text-center py-12">
             <p className="text-[#8b6b5c]">Fill in the Blank game coming soon!</p>
@@ -370,6 +488,7 @@ function GamePlayer({ game, onClose, onComplete }: { game: GameActivity; onClose
 
 // ==================== PERSONAL GROWTH TAB ====================
 function PersonalGrowthTab({ student }: { student: StudentData }) {
+  const [activeSection, setActiveSection] = useState<'overview' | 'skills' | 'topics' | 'goals'>('overview');
   const [goals, setGoals] = useState(student.growthGoals);
 
   const masteredTopics = student.topicMastery.filter(t => t.status === 'mastered');
@@ -378,238 +497,287 @@ function PersonalGrowthTab({ student }: { student: StudentData }) {
   const learningTopics = student.topicMastery.filter(t => t.status === 'learning');
 
   const unlockedSkills = student.tangibleSkills.filter(s => s.unlocked);
-  const lockedSkills = student.tangibleSkills.filter(s => !s.unlocked);
   const completedSkills = student.tangibleSkills.filter(s => s.completed);
+  const readySkills = unlockedSkills.filter(s => !s.completed);
 
   const unlockedGoals = goals.filter(g => g.unlocked);
-  const lockedGoals = goals.filter(g => !g.unlocked);
+  const selectedGoalsCount = goals.filter(g => g.selected).length;
 
   const handleSelectGoal = (goal: GrowthGoal) => {
     setGoals(prev => prev.map(g => g.id === goal.id ? { ...g, selected: !g.selected } : g));
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Hero Section - What You Can Do Now */}
-      <div className="bg-gradient-to-r from-[#d4867a] to-[#fcc4be] rounded-2xl p-6 text-white">
-        <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
-          <Sparkles className="w-6 h-6" /> What You Can Do Now
-        </h3>
-        <p className="text-white/90 mb-4">Tangible things you couldn't do before starting your training:</p>
-        <div className="space-y-2">
-          {completedSkills.slice(0, 3).map(skill => (
-            <div key={skill.id} className="flex items-center gap-3 bg-white/20 rounded-xl p-3">
-              <CheckCircle className="w-5 h-5 text-white" />
-              <span className="font-medium">{skill.title}</span>
-            </div>
-          ))}
-          {completedSkills.length === 0 && (
-            <p className="text-white/80 text-sm">Keep learning! Your first achievement is just around the corner.</p>
-          )}
+  // Overview Section - Simple and encouraging
+  if (activeSection === 'overview') {
+    return (
+      <div className="space-y-6">
+        {/* Calm Welcome */}
+        <div className="bg-white rounded-2xl p-6 text-center">
+          <div className="w-16 h-16 bg-[#faf6f3] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-8 h-8 text-[#d4867a]" />
+          </div>
+          <h3 className="text-xl font-medium text-[#5a3d2a] mb-2">Your Learning Journey</h3>
+          <p className="text-[#8b6b5c] text-sm">Take it one step at a time. You're doing great!</p>
         </div>
-        {completedSkills.length > 3 && (
-          <p className="text-sm text-white/80 mt-2">+{completedSkills.length - 3} more skills mastered</p>
-        )}
-      </div>
 
-      {/* Skills You Can Practice */}
-      <div className="bg-white rounded-2xl p-5">
-        <h3 className="font-medium text-[#5a3d2a] mb-4 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-[#d4867a]" /> Skills Ready to Practice
-        </h3>
+        {/* Simple Stats */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white rounded-2xl p-5 text-center">
+            <p className="text-3xl font-bold text-[#d4867a]">{completedSkills.length}</p>
+            <p className="text-sm text-[#8b6b5c] mt-1">Skills Learned</p>
+          </div>
+          <div className="bg-white rounded-2xl p-5 text-center">
+            <p className="text-3xl font-bold text-green-600">{masteredTopics.length}</p>
+            <p className="text-sm text-[#8b6b5c] mt-1">Topics Mastered</p>
+          </div>
+        </div>
+
+        {/* Navigation Cards */}
         <div className="space-y-3">
-          {unlockedSkills.filter(s => !s.completed).map(skill => (
-            <div key={skill.id} className="p-4 bg-[#faf6f3] rounded-xl border-2 border-[#d4867a]/20">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-medium text-[#5a3d2a]">{skill.title}</p>
-                  <p className="text-sm text-[#8b6b5c]">{skill.description}</p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {skill.requiredTopics.map(topic => (
-                      <span key={topic} className="text-[10px] px-2 py-0.5 bg-white rounded-full text-[#8b6b5c]">{topic}</span>
-                    ))}
-                  </div>
-                </div>
-                <Badge className="bg-green-500">Ready!</Badge>
+          <button 
+            onClick={() => setActiveSection('skills')}
+            className="w-full bg-white rounded-2xl p-5 flex items-center justify-between hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-[#faf6f3] rounded-xl flex items-center justify-center">
+                <Zap className="w-6 h-6 text-[#d4867a]" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-[#5a3d2a]">Skills to Practice</p>
+                <p className="text-sm text-[#8b6b5c]">{readySkills.length} ready for you</p>
               </div>
             </div>
-          ))}
-          {unlockedSkills.filter(s => !s.completed).length === 0 && (
-            <p className="text-sm text-[#8b6b5c] text-center py-4">Complete more lessons to unlock new skills!</p>
-          )}
+            <ChevronRight className="w-5 h-5 text-[#8b6b5c]" />
+          </button>
+
+          <button 
+            onClick={() => setActiveSection('topics')}
+            className="w-full bg-white rounded-2xl p-5 flex items-center justify-between hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-[#faf6f3] rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-[#d4867a]" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-[#5a3d2a]">Topic Progress</p>
+                <p className="text-sm text-[#8b6b5c]">See how you're doing</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#8b6b5c]" />
+          </button>
+
+          <button 
+            onClick={() => setActiveSection('goals')}
+            className="w-full bg-white rounded-2xl p-5 flex items-center justify-between hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-[#faf6f3] rounded-xl flex items-center justify-center">
+                <Target className="w-6 h-6 text-[#d4867a]" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-[#5a3d2a]">Your Goals</p>
+                <p className="text-sm text-[#8b6b5c]">{selectedGoalsCount} selected</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[#8b6b5c]" />
+          </button>
+        </div>
+
+        {/* Encouragement */}
+        <div className="bg-gradient-to-r from-[#d4867a]/10 to-[#fcc4be]/10 rounded-2xl p-5 text-center">
+          <p className="text-[#5a3d2a] font-medium">"Every expert was once a beginner."</p>
+          <p className="text-sm text-[#8b6b5c] mt-1">Keep going, {student.name.split(' ')[0]}!</p>
         </div>
       </div>
+    );
+  }
 
-      {/* Locked Skills - Coming Soon */}
-      {lockedSkills.length > 0 && (
-        <div className="bg-gray-50 rounded-2xl p-5">
-          <h3 className="font-medium text-[#5a3d2a] mb-4 flex items-center gap-2">
-            <Lock className="w-5 h-5 text-[#8b6b5c]" /> Coming Soon
-          </h3>
-          <div className="space-y-2">
-            {lockedSkills.slice(0, 3).map(skill => (
-              <div key={skill.id} className="p-3 bg-white rounded-xl opacity-60">
-                <div className="flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-[#8b6b5c]" />
-                  <p className="text-sm text-[#5a3d2a]">{skill.title}</p>
+  // Skills Section
+  if (activeSection === 'skills') {
+    return (
+      <div className="space-y-4">
+        <button 
+          onClick={() => setActiveSection('overview')}
+          className="flex items-center gap-2 text-[#d4867a] font-medium"
+        >
+          <ArrowLeft className="w-5 h-5" /> Back
+        </button>
+
+        <h3 className="text-lg font-medium text-[#5a3d2a]">Skills Ready to Practice</h3>
+        
+        {readySkills.length === 0 ? (
+          <div className="bg-white rounded-2xl p-8 text-center">
+            <p className="text-[#8b6b5c]">Complete more lessons to unlock new skills!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {readySkills.map(skill => (
+              <div key={skill.id} className="bg-white rounded-2xl p-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-[#5a3d2a]">{skill.title}</p>
+                    <p className="text-sm text-[#8b6b5c] mt-1">{skill.description}</p>
+                  </div>
                 </div>
-                <p className="text-xs text-[#8b6b5c] mt-1">Unlocks at {skill.requiredLevel}</p>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Topic Mastery */}
-      <div className="bg-white rounded-2xl p-5">
-        <h3 className="font-medium text-[#5a3d2a] mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-[#d4867a]" /> Your Topic Mastery
-        </h3>
-        
-        {/* Mastered */}
-        {masteredTopics.length > 0 && (
-          <div className="mb-4">
-            <p className="text-sm font-medium text-green-700 mb-2 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4" /> Mastered ({masteredTopics.length})
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {masteredTopics.map(t => (
-                <span key={t.topic} className="px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                  {t.topic} ({t.score}%)
-                </span>
-              ))}
-            </div>
-          </div>
         )}
 
-        {/* Strong */}
-        {strongTopics.length > 0 && (
-          <div className="mb-4">
-            <p className="text-sm font-medium text-blue-700 mb-2 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" /> Strong ({strongTopics.length})
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {strongTopics.map(t => (
-                <span key={t.topic} className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm">
-                  {t.topic} ({t.score}%)
-                </span>
+        {completedSkills.length > 0 && (
+          <>
+            <h3 className="text-lg font-medium text-[#5a3d2a] mt-6">Skills You've Mastered</h3>
+            <div className="space-y-3">
+              {completedSkills.map(skill => (
+                <div key={skill.id} className="bg-green-50 rounded-2xl p-5 border border-green-200">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <p className="font-medium text-green-800">{skill.title}</p>
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Familiar */}
-        {familiarTopics.length > 0 && (
-          <div className="mb-4">
-            <p className="text-sm font-medium text-yellow-700 mb-2 flex items-center gap-2">
-              <Lightbulb className="w-4 h-4" /> Familiar ({familiarTopics.length})
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {familiarTopics.map(t => (
-                <span key={t.topic} className="px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-                  {t.topic} ({t.score}%)
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Learning */}
-        {learningTopics.length > 0 && (
-          <div>
-            <p className="text-sm font-medium text-orange-700 mb-2 flex items-center gap-2">
-              <Clock className="w-4 h-4" /> Learning ({learningTopics.length})
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {learningTopics.map(t => (
-                <span key={t.topic} className="px-3 py-1.5 bg-orange-100 text-orange-800 rounded-full text-sm">
-                  {t.topic} ({t.score}%)
-                </span>
-              ))}
-            </div>
-          </div>
+          </>
         )}
       </div>
+    );
+  }
 
-      {/* Growth Goals */}
-      <div className="bg-white rounded-2xl p-5">
-        <h3 className="font-medium text-[#5a3d2a] mb-4 flex items-center gap-2">
-          <Target className="w-5 h-5 text-[#d4867a]" /> Your Growth Goals
-        </h3>
-        <p className="text-sm text-[#8b6b5c] mb-4">Select goals that matter to you. We'll help you achieve them!</p>
-        
-        {/* Unlocked Goals */}
-        <div className="space-y-2 mb-4">
-          {unlockedGoals.map(goal => (
+  // Topics Section
+  if (activeSection === 'topics') {
+    return (
+      <div className="space-y-4">
+        <button 
+          onClick={() => setActiveSection('overview')}
+          className="flex items-center gap-2 text-[#d4867a] font-medium"
+        >
+          <ArrowLeft className="w-5 h-5" /> Back
+        </button>
+
+        <h3 className="text-lg font-medium text-[#5a3d2a]">Your Topics</h3>
+
+        {/* Simple Progress Bar */}
+        <div className="bg-white rounded-2xl p-5">
+          <p className="text-sm text-[#8b6b5c] mb-3">Overall Progress</p>
+          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
             <div 
-              key={goal.id} 
-              onClick={() => handleSelectGoal(goal)}
-              className={`p-4 rounded-xl cursor-pointer transition-all ${
-                goal.selected 
-                  ? 'bg-[#d4867a] text-white' 
-                  : 'bg-[#faf6f3] text-[#5a3d2a] hover:bg-[#fcc4be]/30'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`font-medium ${goal.selected ? 'text-white' : 'text-[#5a3d2a]'}`}>{goal.title}</p>
-                  <p className={`text-sm ${goal.selected ? 'text-white/80' : 'text-[#8b6b5c]'}`}>{goal.description}</p>
-                </div>
-                {goal.selected && <CheckCircle className="w-5 h-5 text-white" />}
+              className="h-full bg-gradient-to-r from-[#d4867a] to-green-500 rounded-full transition-all"
+              style={{ width: `${(student.topicMastery.filter(t => t.status !== 'not-started').length / student.topicMastery.length) * 100}%` }}
+            />
+          </div>
+          <p className="text-sm text-[#8b6b5c] mt-2 text-center">
+            {student.topicMastery.filter(t => t.status !== 'not-started').length} of {student.topicMastery.length} topics started
+          </p>
+        </div>
+
+        {/* Topic List */}
+        <div className="space-y-2">
+          {masteredTopics.length > 0 && (
+            <div className="bg-green-50 rounded-2xl p-4">
+              <p className="text-sm font-medium text-green-700 mb-2">Mastered</p>
+              <div className="flex flex-wrap gap-2">
+                {masteredTopics.map(t => (
+                  <span key={t.topic} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                    {t.topic}
+                  </span>
+                ))}
               </div>
             </div>
+          )}
+
+          {strongTopics.length > 0 && (
+            <div className="bg-blue-50 rounded-2xl p-4">
+              <p className="text-sm font-medium text-blue-700 mb-2">Strong</p>
+              <div className="flex flex-wrap gap-2">
+                {strongTopics.map(t => (
+                  <span key={t.topic} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                    {t.topic}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {[...familiarTopics, ...learningTopics].length > 0 && (
+            <div className="bg-orange-50 rounded-2xl p-4">
+              <p className="text-sm font-medium text-orange-700 mb-2">Learning</p>
+              <div className="flex flex-wrap gap-2">
+                {[...familiarTopics, ...learningTopics].map(t => (
+                  <span key={t.topic} className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                    {t.topic}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Goals Section
+  if (activeSection === 'goals') {
+    return (
+      <div className="space-y-4">
+        <button 
+          onClick={() => setActiveSection('overview')}
+          className="flex items-center gap-2 text-[#d4867a] font-medium"
+        >
+          <ArrowLeft className="w-5 h-5" /> Back
+        </button>
+
+        <div className="bg-white rounded-2xl p-5">
+          <h3 className="text-lg font-medium text-[#5a3d2a] mb-2">Your Goals</h3>
+          <p className="text-sm text-[#8b6b5c]">Pick goals that excite you. We'll help you get there!</p>
+        </div>
+
+        <div className="space-y-3">
+          {unlockedGoals.map(goal => (
+            <button
+              key={goal.id}
+              onClick={() => handleSelectGoal(goal)}
+              className={`w-full text-left rounded-2xl p-5 transition-all ${
+                goal.selected 
+                  ? 'bg-[#d4867a] text-white' 
+                  : 'bg-white hover:bg-[#faf6f3]'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                  goal.selected ? 'border-white bg-white' : 'border-[#d4867a]'
+                }`}>
+                  {goal.selected && <CheckCircle className="w-4 h-4 text-[#d4867a]" />}
+                </div>
+                <div>
+                  <p className={`font-medium ${goal.selected ? 'text-white' : 'text-[#5a3d2a]'}`}>{goal.title}</p>
+                  <p className={`text-sm mt-1 ${goal.selected ? 'text-white/80' : 'text-[#8b6b5c]'}`}>{goal.description}</p>
+                </div>
+              </div>
+            </button>
           ))}
         </div>
 
-        {/* Locked Goals */}
-        {lockedGoals.length > 0 && (
-          <div>
-            <p className="text-sm font-medium text-[#8b6b5c] mb-2">Unlock at higher levels:</p>
-            <div className="space-y-2">
-              {lockedGoals.slice(0, 2).map(goal => (
-                <div key={goal.id} className="p-3 bg-gray-100 rounded-xl opacity-60 flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-[#8b6b5c]" />
-                  <span className="text-sm text-[#5a3d2a]">{goal.title}</span>
-                  <span className="text-xs text-[#8b6b5c] ml-auto">{goal.requiredLevel}+</span>
-                </div>
-              ))}
-            </div>
+        {selectedGoalsCount > 0 && (
+          <div className="bg-[#faf6f3] rounded-2xl p-5 text-center">
+            <p className="text-[#5a3d2a] font-medium">{selectedGoalsCount} goal{selectedGoalsCount > 1 ? 's' : ''} selected!</p>
+            <p className="text-sm text-[#8b6b5c] mt-1">You're on your way!</p>
           </div>
         )}
       </div>
+    );
+  }
 
-      {/* Progress Summary */}
-      <div className="bg-gradient-to-br from-[#5a3d2a] to-[#8b6b5c] rounded-2xl p-5 text-white">
-        <h3 className="font-medium mb-4 flex items-center gap-2">
-          <Award className="w-5 h-5" /> Your Journey So Far
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center p-3 bg-white/10 rounded-xl">
-            <p className="text-2xl font-bold">{student.topicMastery.filter(t => t.status !== 'not-started').length}</p>
-            <p className="text-xs text-white/80">Topics Started</p>
-          </div>
-          <div className="text-center p-3 bg-white/10 rounded-xl">
-            <p className="text-2xl font-bold">{masteredTopics.length}</p>
-            <p className="text-xs text-white/80">Topics Mastered</p>
-          </div>
-          <div className="text-center p-3 bg-white/10 rounded-xl">
-            <p className="text-2xl font-bold">{completedSkills.length}</p>
-            <p className="text-xs text-white/80">Skills Completed</p>
-          </div>
-          <div className="text-center p-3 bg-white/10 rounded-xl">
-            <p className="text-2xl font-bold">{goals.filter(g => g.selected).length}</p>
-            <p className="text-xs text-white/80">Goals Selected</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 // ==================== STUDENT DASHBOARD ====================
 function StudentDashboard({ student }: { student: StudentData }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [playingGame, setPlayingGame] = useState<GameActivity | null>(null);
+  const [reviewingGame, setReviewingGame] = useState<GameActivity | null>(null);
   const [assignments, setAssignments] = useState(student.assignments);
   const [showAssignmentDetail, setShowAssignmentDetail] = useState<StudentAssignment | null>(null);
 
@@ -631,17 +799,67 @@ function StudentDashboard({ student }: { student: StudentData }) {
     }
   };
 
+  const handleReviewComplete = () => {
+    setReviewingGame(null);
+  };
+
+  // Find game by assignment title
+  const findGameByTitle = (title: string): GameActivity | null => {
+    // Try exact match first
+    let game = student.games.find(g => g.title === title);
+    if (game) return game;
+    
+    // Try partial match
+    game = student.games.find(g => 
+      title.toLowerCase().includes(g.title.toLowerCase()) ||
+      g.title.toLowerCase().includes(title.toLowerCase())
+    );
+    if (game) return game;
+    
+    // Return first game as fallback for demo
+    return student.games[0] || null;
+  };
+
+  // Handle start assignment
+  const handleStartAssignment = (assignment: StudentAssignment) => {
+    if (assignment.type === 'game') {
+      const game = findGameByTitle(assignment.title);
+      if (game) {
+        setPlayingGame(game);
+      }
+    } else {
+      setShowAssignmentDetail(assignment);
+    }
+  };
+
+  // Handle review completed assignment
+  const handleReviewAssignment = (assignment: StudentAssignment) => {
+    const game = findGameByTitle(assignment.title);
+    if (game) {
+      setReviewingGame(game);
+    }
+  };
+
   if (playingGame) {
     return <GamePlayer game={playingGame} onClose={() => setPlayingGame(null)} onComplete={handleGameComplete} />;
   }
 
+  if (reviewingGame) {
+    return <GamePlayer game={reviewingGame} onClose={() => setReviewingGame(null)} onComplete={handleReviewComplete} reviewMode />;
+  }
+
   return (
     <div className="min-h-screen bg-[#faf6f3]">
-      {/* Header */}
+      {/* Header - Single Logo */}
       <header className="bg-[#fcc4be] sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="flex items-center justify-between h-16 sm:h-20">
-            <img src="/logo-banner.png" alt="Roam Learning" className="h-10 sm:h-12 w-auto object-contain" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-[#d4867a]" />
+              </div>
+              <span className="font-serif text-[#5a3d2a] text-lg hidden sm:block">Roam Learning</span>
+            </div>
             <div className="flex items-center gap-4">
               <div className="text-right hidden sm:block">
                 <p className="font-medium text-[#5a3d2a]">{student.name}</p>
@@ -727,7 +945,7 @@ function StudentDashboard({ student }: { student: StudentData }) {
                 </h3>
                 <div className="space-y-2">
                   {newAssignments.map(a => (
-                    <div key={a.id} onClick={() => setShowAssignmentDetail(a)} className="bg-white p-4 rounded-xl flex items-center justify-between cursor-pointer hover:shadow-md transition-shadow">
+                    <div key={a.id} className="bg-white p-4 rounded-xl flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {a.type === 'homework' ? <BookOpen className="w-5 h-5 text-[#d4867a]" /> : <Gamepad2 className="w-5 h-5 text-green-500" />}
                         <div>
@@ -735,7 +953,13 @@ function StudentDashboard({ student }: { student: StudentData }) {
                           <p className="text-xs text-[#8b6b5c]">Due: {a.dueDate}</p>
                         </div>
                       </div>
-                      <Button size="sm" className="bg-[#d4867a]"><Play className="w-4 h-4 mr-1" /> Start</Button>
+                      <Button 
+                        size="sm" 
+                        className="bg-[#d4867a]"
+                        onClick={() => handleStartAssignment(a)}
+                      >
+                        <Play className="w-4 h-4 mr-1" /> Start
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -754,12 +978,19 @@ function StudentDashboard({ student }: { student: StudentData }) {
               ) : (
                 <div className="space-y-2">
                   {pendingAssignments.slice(0, 3).map(a => (
-                    <div key={a.id} onClick={() => a.type === 'game' ? setPlayingGame(student.games.find(g => g.title === a.title) || null) : setShowAssignmentDetail(a)} className="p-3 bg-gray-50 rounded-xl flex items-center justify-between cursor-pointer hover:bg-gray-100">
+                    <div key={a.id} className="p-3 bg-gray-50 rounded-xl flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {a.type === 'homework' ? <BookOpen className="w-4 h-4 text-[#d4867a]" /> : <Gamepad2 className="w-4 h-4 text-green-500" />}
                         <p className="text-sm text-[#5a3d2a]">{a.title}</p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-[#8b6b5c]" />
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleStartAssignment(a)}
+                        className="text-[#d4867a] hover:text-[#c2756a] hover:bg-[#fcc4be]/20"
+                      >
+                        <Play className="w-4 h-4" />
+                      </Button>
                     </div>
                   ))}
                   {pendingAssignments.length > 3 && (
@@ -797,8 +1028,8 @@ function StudentDashboard({ student }: { student: StudentData }) {
                         </div>
                         <Button 
                           size="sm" 
-                          onClick={() => a.type === 'game' ? setPlayingGame(student.games.find(g => g.title === a.title) || null) : setShowAssignmentDetail(a)}
-                          className="bg-[#d4867a]"
+                          onClick={() => handleStartAssignment(a)}
+                          className="bg-[#d4867a] hover:bg-[#c2756a]"
                         >
                           <Play className="w-4 h-4 mr-1" /> Start
                         </Button>
@@ -821,6 +1052,18 @@ function StudentDashboard({ student }: { student: StudentData }) {
                           <div className="text-right">
                             <p className="text-2xl font-bold text-green-600">{a.score}%</p>
                           </div>
+                        )}
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        {a.type === 'game' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleReviewAssignment(a)}
+                            className="flex-1 border-green-300 text-green-700 hover:bg-green-100"
+                          >
+                            <RotateCcw className="w-4 h-4 mr-1" /> Review
+                          </Button>
                         )}
                       </div>
                       {a.feedback && (
@@ -893,7 +1136,15 @@ function StudentDashboard({ student }: { student: StudentData }) {
                 <p className="text-sm text-[#5a3d2a]">{showAssignmentDetail.content}</p>
               </div>
             )}
-            <Button className="w-full bg-[#d4867a]">
+            <Button 
+              className="w-full bg-[#d4867a] hover:bg-[#c2756a]"
+              onClick={() => {
+                if (showAssignmentDetail) {
+                  setShowAssignmentDetail(null);
+                  handleStartAssignment(showAssignmentDetail);
+                }
+              }}
+            >
               <Play className="w-4 h-4 mr-2" /> Start Assignment
             </Button>
           </div>
